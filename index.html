@@ -1,405 +1,410 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exam Performance Analysis: Spanish IE4</title>
+import React, { useState, useMemo } from 'react';
+import { 
+  Moon, 
+  Utensils, 
+  Activity, 
+  Brain, 
+  RotateCcw,
+  Info,
+  User,
+  Heart,
+  Battery,
+  Smile,
+  Shield,
+  Dna
+} from 'lucide-react';
+
+// --- Simulation Logic ---
+
+const calculateMetrics = (sleep, diet, exercise, stress, age) => {
+  // 1. Sleep Score (Bell curve around 8h)
+  let sScore = 100 - Math.abs(8 - sleep) * 15;
+  if (sleep < 4) sScore = 20;
+  sScore = Math.max(0, Math.min(100, sScore));
+
+  // 2. Diet Score (Harvard Plate Balance)
+  const totalDiet = diet.veg + diet.prot + diet.grain + diet.junk;
+  let dScore = 0;
+  if (totalDiet > 0) {
+    const pVeg = (diet.veg / totalDiet) * 100;
+    const pProt = (diet.prot / totalDiet) * 100;
+    const pJunk = (diet.junk / totalDiet) * 100;
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Plotly.js -->
-    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    // Ideal: 50% Veg, 25% Prot. Penalty for junk.
+    const quality = 100 - (Math.abs(50 - pVeg) + Math.abs(25 - pProt));
+    dScore = Math.max(0, quality - (pJunk * 2));
+  }
 
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  // 3. Exercise Score
+  // Intensity needs to be moderate-high, but not extreme without sleep
+  let eScore = exercise.intensity;
+  if (exercise.intensity > 80 && sScore < 50) eScore -= 40; // Overtraining penalty
+  eScore = Math.max(0, Math.min(100, eScore));
 
-    <style>
-        /* LMS SAFEGUARD: Ensure html/body take up full height but don't force styles that Canvas might override */
-        html, body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-        }
+  // 4. Stress Score (Net Stress)
+  const netStress = Math.max(0, stress.load - stress.mgmt);
+  const strScore = Math.max(0, 100 - netStress);
 
-        /* Custom Chart Container Styling */
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 600px;
-            height: 350px; /* Base height */
-            max-height: 400px;
-            margin-left: auto;
-            margin-right: auto;
-        }
+  // --- Derived Biometrics ---
+  
+  // Age Factor: As you get older, it's harder to maintain high vitality
+  const agePenalty = Math.max(0, (age - 30) * 0.5); 
 
-        @media (min-width: 768px) {
-            .chart-container {
-                height: 400px;
-            }
-        }
+  // Energy: Driven by Sleep & Diet
+  let energy = (sScore * 0.5 + dScore * 0.3 + eScore * 0.2) - (agePenalty * 0.5);
+  
+  // Mood: Driven by Stress & Exercise
+  let mood = (strScore * 0.4 + sScore * 0.3 + eScore * 0.3);
+  
+  // Immunity: Driven by Diet & Sleep
+  let immunity = (dScore * 0.5 + sScore * 0.4 + eScore * 0.1) - (agePenalty * 0.8);
 
-        /* Palette Classes for Dynamic Usage */
-        .text-primary { color: #2563EB; } /* Vibrant Blue */
-        .bg-primary { background-color: #2563EB; }
-        .text-accent { color: #F97316; } /* Orange */
-        .bg-accent { background-color: #F97316; }
-        .text-secondary { color: #14B8A6; } /* Teal */
-        .bg-secondary { background-color: #14B8A6; }
+  // Biological Age (Visual aging): Chronological age + penalty for bad habits
+  const vitalityAvg = (energy + mood + immunity) / 3;
+  const biologicalAge = age + ((100 - vitalityAvg) / 5);
+
+  return {
+    energy: Math.max(10, Math.min(100, energy)),
+    mood: Math.max(10, Math.min(100, mood)),
+    immunity: Math.max(10, Math.min(100, immunity)),
+    vitality: Math.max(0, Math.min(100, vitalityAvg)),
+    biologicalAge,
+    sScore, dScore, eScore, strScore
+  };
+};
+
+// --- Visual Components ---
+
+const Humanoid = ({ gender, age, metrics, diet, exercise }) => {
+  // Visual Parameters derived from state
+  
+  // 1. Posture (0 = slumped, 1 = upright)
+  const posture = metrics.energy / 100; 
+  const headY = 40 + (1 - posture) * 15; // Head drops when tired
+  const shoulderY = 75 + (1 - posture) * 10;
+  
+  // 2. Body Composition
+  // "Width" driven by Junk Food vs Exercise
+  const caloricExcess = (diet.junk * 2 + diet.grain) - (exercise.intensity / 5);
+  const bodyWidth = 40 + Math.max(0, caloricExcess * 2); // Base width 40
+  
+  // 3. Muscle Definition (Stroke width)
+  const muscle = 2 + (exercise.intensity / 20);
+
+  // 4. Aging (Hair & Wrinkles)
+  const isOld = metrics.biologicalAge > 60;
+  const isVeryOld = metrics.biologicalAge > 80;
+  const hairColor = metrics.biologicalAge > 65 ? "#e2e8f0" : metrics.biologicalAge > 45 ? "#94a3b8" : "#3f2c22";
+  
+  // Gender shapes
+  const isFemale = gender === 'female';
+  const hipWidth = isFemale ? bodyWidth + 15 : bodyWidth;
+  const shoulderWidth = isFemale ? bodyWidth : bodyWidth + 15;
+
+  // Colors based on health
+  const skinTone = metrics.immunity < 40 ? "#e2e8d0" : "#f5d0b0"; // Pale if sick
+  const shirtColor = isFemale ? "#f472b6" : "#60a5fa";
+
+  return (
+    <svg viewBox="0 0 200 400" className="w-full h-full drop-shadow-2xl transition-all duration-700">
+      <defs>
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="5" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+      </defs>
+
+      {/* Aura / Vitality Glow */}
+      <ellipse 
+        cx="100" cy="200" 
+        rx={60 + metrics.vitality/2} ry={150} 
+        fill={metrics.vitality > 80 ? "rgba(74, 222, 128, 0.2)" : "rgba(0,0,0,0)"} 
+        filter="url(#glow)"
+        className="transition-all duration-1000"
+      />
+
+      {/* LEGS */}
+      <g stroke={skinTone} strokeWidth={muscle + 10} strokeLinecap="round">
+        <line x1="85" y1="220" x2="85" y2="380" />
+        <line x1="115" y1="220" x2="115" y2="380" />
+      </g>
+      {/* Clothing (Pants) */}
+      <g stroke="#334155" strokeWidth={muscle + 12} strokeLinecap="round">
+         <line x1="85" y1="220" x2="85" y2="300" />
+         <line x1="115" y1="220" x2="115" y2="300" />
+      </g>
+
+      {/* TORSO */}
+      {/* Dynamic shape based on gender and weight */}
+      <path 
+        d={`
+          M ${100 - shoulderWidth/2} ${shoulderY} 
+          Q ${100 - bodyWidth/2} 150 ${100 - hipWidth/2} 220 
+          L ${100 + hipWidth/2} 220 
+          Q ${100 + bodyWidth/2} 150 ${100 + shoulderWidth/2} ${shoulderY} 
+          Z
+        `} 
+        fill={shirtColor}
+        className="transition-all duration-700"
+      />
+
+      {/* ARMS */}
+      <g stroke={skinTone} strokeWidth={muscle + 8} strokeLinecap="round">
+        {/* Left Arm - droops if posture is bad */}
+        <path d={`M ${100 - shoulderWidth/2} ${shoulderY + 5} Q ${60 - (1-posture)*10} 150 ${65} ${200 + (1-posture)*30}`} fill="none" />
+        {/* Right Arm */}
+        <path d={`M ${100 + shoulderWidth/2} ${shoulderY + 5} Q ${140 + (1-posture)*10} 150 ${135} ${200 + (1-posture)*30}`} fill="none" />
+      </g>
+
+      {/* HEAD Group (Moves with posture) */}
+      <g transform={`translate(0, ${headY - 40})`} className="transition-all duration-700">
         
-        .card-shadow {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-    </style>
-</head>
-<body>
+        {/* Neck */}
+        <rect x="90" y="30" width="20" height="30" fill={skinTone} />
 
-    <!-- WRAPPER DIV: Handles Background/Font for LMS Compatibility -->
-    <div id="app-container" class="min-h-screen bg-slate-50 font-[Poppins,sans-serif] text-slate-800 pb-12">
+        {/* Face Shape */}
+        <ellipse cx="100" cy="30" rx="28" ry="34" fill={skinTone} />
 
-        <!-- Header Section -->
-        <header class="bg-gradient-to-r from-blue-600 to-teal-500 text-white p-6 md:p-8 shadow-lg">
-            <!-- Constrained width (max-w-5xl) to fit better in Canvas frames -->
-            <div class="max-w-5xl mx-auto">
-                <h1 class="text-3xl md:text-4xl font-bold mb-2">🇪🇸 Exam Performance Report</h1>
-                <p class="text-lg md:text-xl opacity-90">Student: Mohammed Zayan Syed | Course: Spanish IE4</p>
-            </div>
-        </header>
+        {/* Hair */}
+        {isFemale ? (
+           // Long Hair
+           <path d="M 70 10 Q 100 -10 130 10 L 135 60 Q 100 70 65 60 Z" fill={hairColor} />
+        ) : (
+           // Short Hair
+           <path d="M 72 15 Q 100 -5 128 15 L 128 30 Q 100 20 72 30 Z" fill={hairColor} />
+        )}
 
-        <main class="max-w-5xl mx-auto p-4 md:p-8 space-y-12">
+        {/* Eyes */}
+        <g fill="#1e293b">
+          <circle cx="90" cy="25" r={metrics.energy < 30 ? 1.5 : 2.5} />
+          <circle cx="110" cy="25" r={metrics.energy < 30 ? 1.5 : 2.5} />
+          {/* Bags under eyes if tired */}
+          {metrics.sScore < 40 && (
+            <g stroke="#000" strokeOpacity="0.1" strokeWidth="2" fill="none">
+              <path d="M 86 30 Q 90 33 94 30" />
+              <path d="M 106 30 Q 110 33 114 30" />
+            </g>
+          )}
+        </g>
 
-            <!-- Section 1: Executive Summary -->
-            <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Big Score Card -->
-                <div class="bg-white rounded-2xl p-8 card-shadow flex flex-col items-center justify-center text-center col-span-1 md:col-span-1 border-t-4 border-orange-500">
-                    <h2 class="text-slate-500 font-semibold uppercase tracking-wider text-sm mb-2">Final Score</h2>
-                    <div class="text-5xl md:text-6xl font-bold text-blue-600 mb-2">85.75%</div>
-                    <p class="text-green-500 font-medium">PASS - Distinction Level</p>
-                    <div class="mt-4 text-slate-400 text-sm">Time Taken: 38 Minutes</div>
-                </div>
+        {/* Mouth - Mood Dependent */}
+        <path 
+          d={metrics.mood > 60 
+            ? "M 88 45 Q 100 55 112 45" // Smile
+            : metrics.mood < 40 
+              ? "M 88 50 Q 100 40 112 50" // Frown
+              : "M 90 48 L 110 48" // Neutral
+          }
+          stroke="#1e293b" 
+          strokeWidth="2" 
+          fill="none" 
+          strokeLinecap="round"
+        />
 
-                <!-- Introduction Text -->
-                <div class="bg-white rounded-2xl p-8 card-shadow col-span-1 md:col-span-2 flex flex-col justify-center">
-                    <h2 class="text-2xl font-bold text-slate-800 mb-4">Performance Overview</h2>
-                    <p class="text-slate-600 leading-relaxed text-lg">
-                        Excellent work, Mohammed! You demonstrated a strong command of vocabulary related to <strong>Town</strong>, <strong>School</strong>, and <strong>House</strong>. Your writing composition was particularly detailed and creative. However, the data indicates specific challenges with <span class="text-orange-500 font-bold">irregular verbs</span> (Ser, Ir, Tener) and <span class="text-orange-500 font-bold">adjective agreement</span>. This report breaks down your results to help you target those specific areas for 100% mastery next time.
-                    </p>
-                </div>
-            </section>
+        {/* Wrinkles (Age Dependent) */}
+        {isOld && (
+          <g stroke="#000" strokeOpacity="0.15" strokeWidth="1" fill="none">
+             <path d="M 85 15 Q 100 20 115 15" /> 
+             <path d="M 88 10 Q 100 15 112 10" />
+             {isVeryOld && <path d="M 100 45 L 100 55" />} {/* Mouth lines */}
+          </g>
+        )}
+      </g>
+    </svg>
+  );
+};
 
-            <!-- Section 2: Macro Analysis (Chart.js) -->
-            <section>
-                <div class="mb-6">
-                    <h3 class="text-2xl font-bold text-slate-800 border-l-4 border-blue-600 pl-4">Topic Proficiency Breakdown</h3>
-                    <p class="mt-2 text-slate-600 max-w-3xl">
-                        By categorizing the 71 questions into core competency areas, we can see a clear "skill profile." While your reading comprehension and vocabulary recall are elite, grammar mechanics (specifically verb conjugation) lagged slightly behind.
-                    </p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Chart 1: Radar Chart for Skills -->
-                    <div class="bg-white rounded-2xl p-6 card-shadow">
-                        <h4 class="text-lg font-semibold text-center mb-4 text-slate-700">Competency Radar</h4>
-                        <div class="chart-container">
-                            <canvas id="skillRadarChart"></canvas>
-                        </div>
-                        <p class="text-center text-sm text-slate-400 mt-2">Proficiency % by Category</p>
-                    </div>
-
-                    <!-- Chart 2: Question Type Performance -->
-                    <div class="bg-white rounded-2xl p-6 card-shadow">
-                        <h4 class="text-lg font-semibold text-center mb-4 text-slate-700">Score Distribution by Question Type</h4>
-                        <div class="chart-container">
-                            <canvas id="scoreDistributionChart"></canvas>
-                        </div>
-                        <p class="text-center text-sm text-slate-400 mt-2">Points Earned vs. Points Missed</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Section 3: Deep Dive - The Error Log (Chart.js Bar) -->
-            <section>
-                <div class="mb-6">
-                    <h3 class="text-2xl font-bold text-slate-800 border-l-4 border-orange-500 pl-4">Critical Analysis: The "Missed" Concepts</h3>
-                    <p class="mt-2 text-slate-600 max-w-3xl">
-                        We identified 5 specific incorrect answers in the Multiple Choice section. These weren't random errors; they follow a pattern. The chart below identifies the specific concepts that caused difficulty.
-                    </p>
-                </div>
-
-                <div class="bg-white rounded-2xl p-6 card-shadow">
-                    <div class="chart-container w-full">
-                        <canvas id="errorAnalysisChart"></canvas>
-                    </div>
-                    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                            <strong class="text-orange-600 block mb-1">Irregular Verbs</strong>
-                            <p class="text-sm text-slate-600">Confused 'Ir' (to go) and the 'yo' form of 'Tener' (to have). Drill conjugation tables.</p>
-                        </div>
-                        <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                            <strong class="text-orange-600 block mb-1">Adjectives</strong>
-                            <p class="text-sm text-slate-600">"Feo" means Ugly, not funny. Vocabulary flashcards are recommended.</p>
-                        </div>
-                        <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                            <strong class="text-orange-600 block mb-1">Seasons</strong>
-                            <p class="text-sm text-slate-600">Mixed up "El Verano" (Summer). Remember: 'Verano' is warm, 'Invierno' is cold.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Section 4: Advanced Statistical Distribution (Plotly.js) -->
-            <section>
-                <div class="mb-6">
-                    <h3 class="text-2xl font-bold text-slate-800 border-l-4 border-teal-500 pl-4">Cognitive Load & Difficulty Heatmap</h3>
-                    <p class="mt-2 text-slate-600">
-                        This heatmap visualizes the complexity of the exam sections. The <strong>Grammar</strong> section proved the most challenging (lowest accuracy), while <strong>Writing</strong> and <strong>Self-Description</strong> areas were high-performance zones.
-                    </p>
-                </div>
-                
-                <div class="bg-white rounded-2xl p-6 card-shadow overflow-hidden">
-                    <div id="topicHeatmap" class="w-full h-96"></div>
-                </div>
-            </section>
-
-            <!-- Section 5: Future Roadmap (HTML/CSS Flow) -->
-            <section class="pb-12">
-                <h3 class="text-2xl font-bold text-slate-800 border-l-4 border-blue-600 pl-4 mb-8">Path to 100%: Revision Strategy</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
-                    
-                    <!-- Connector Line (Desktop only) -->
-                    <div class="hidden md:block absolute top-1/2 left-0 w-full h-1 bg-slate-200 -z-10 transform -translate-y-1/2"></div>
-
-                    <!-- Step 1 -->
-                    <div class="bg-white p-6 rounded-xl border-2 border-blue-100 shadow-sm relative z-10 hover:border-blue-500 transition-colors">
-                        <div class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-lg mb-4 mx-auto">1</div>
-                        <h4 class="font-bold text-center text-slate-800">Verb Drill</h4>
-                        <p class="text-sm text-center text-slate-500 mt-2">Focus on "Ir", "Ser", and "Tener". Create a table for 'Yo' forms.</p>
-                    </div>
-
-                    <!-- Step 2 -->
-                    <div class="bg-white p-6 rounded-xl border-2 border-orange-100 shadow-sm relative z-10 hover:border-orange-500 transition-colors">
-                        <div class="w-10 h-10 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold text-lg mb-4 mx-auto">2</div>
-                        <h4 class="font-bold text-center text-slate-800">Adjectives</h4>
-                        <p class="text-sm text-center text-slate-500 mt-2">Review opposites: Bonito/Feo, Grande/Pequeño.</p>
-                    </div>
-
-                    <!-- Step 3 -->
-                    <div class="bg-white p-6 rounded-xl border-2 border-teal-100 shadow-sm relative z-10 hover:border-teal-500 transition-colors">
-                        <div class="w-10 h-10 bg-teal-500 text-white rounded-full flex items-center justify-center font-bold text-lg mb-4 mx-auto">3</div>
-                        <h4 class="font-bold text-center text-slate-800">Grammar Check</h4>
-                        <p class="text-sm text-center text-slate-500 mt-2">Practice agreement: "Me gusta el..." vs "Me gustan los..."</p>
-                    </div>
-
-                    <!-- Step 4 -->
-                    <div class="bg-white p-6 rounded-xl border-2 border-slate-100 shadow-sm relative z-10 hover:border-slate-500 transition-colors">
-                        <div class="w-10 h-10 bg-slate-800 text-white rounded-full flex items-center justify-center font-bold text-lg mb-4 mx-auto">4</div>
-                        <h4 class="font-bold text-center text-slate-800">Re-Test</h4>
-                        <p class="text-sm text-center text-slate-500 mt-2">Attempt the blank exam again with a 30-minute timer.</p>
-                    </div>
-                </div>
-            </section>
-
-        </main>
-
-        <footer class="bg-slate-800 text-slate-400 py-8 text-center">
-            <p>© 2024 Canvas Infographics | Data Visualization for Education</p>
-        </footer>
+const ControlPanel = ({ title, icon: Icon, color, children }) => (
+  <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-4">
+    <div className={`px-4 py-3 bg-${color}-50 border-b border-${color}-100 flex items-center gap-2`}>
+      <Icon className={`text-${color}-600`} size={18} />
+      <span className={`font-bold text-${color}-900 text-sm uppercase tracking-wide`}>{title}</span>
     </div>
+    <div className="p-4 space-y-4">
+      {children}
+    </div>
+  </div>
+);
 
-    <!-- JAVASCRIPT LOGIC -->
-    <script>
-        // --- UTILITY: Label Wrapping Function (16 char limit) ---
-        function splitLabel(str, maxLen = 16) {
-            if (str.length <= maxLen) return str;
-            const words = str.split(' ');
-            const lines = [];
-            let currentLine = words[0];
+const Slider = ({ label, value, min, max, onChange, unit }) => (
+  <div className="space-y-1">
+    <div className="flex justify-between text-xs font-semibold text-slate-600">
+      <label>{label}</label>
+      <span>{value} {unit}</span>
+    </div>
+    <input 
+      type="range" 
+      min={min} 
+      max={max} 
+      value={value} 
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+    />
+  </div>
+);
 
-            for (let i = 1; i < words.length; i++) {
-                if ((currentLine.length + 1 + words[i].length) <= maxLen) {
-                    currentLine += ' ' + words[i];
-                } else {
-                    lines.push(currentLine);
-                    currentLine = words[i];
-                }
-            }
-            lines.push(currentLine);
-            return lines;
-        }
+// --- Main Application ---
 
-        // --- COMMON: Tooltip Configuration ---
-        const commonTooltipOptions = {
-            callbacks: {
-                title: function(tooltipItems) {
-                    const item = tooltipItems[0];
-                    let label = item.chart.data.labels[item.dataIndex];
-                    if (Array.isArray(label)) {
-                        return label.join(' ');
-                    } else {
-                        return label;
-                    }
-                }
-            }
-        };
+export default function VitalityLab() {
+  const [gender, setGender] = useState('female');
+  const [age, setAge] = useState(25);
+  
+  const [sleep, setSleep] = useState(7.5);
+  const [diet, setDiet] = useState({ veg: 5, prot: 5, grain: 5, junk: 2 });
+  const [exercise, setExercise] = useState({ intensity: 50 });
+  const [stress, setStress] = useState({ load: 40, mgmt: 30 });
 
-        // --- CHART 1: SKILL RADAR (Chart.js) ---
-        const ctxRadar = document.getElementById('skillRadarChart').getContext('2d');
-        new Chart(ctxRadar, {
-            type: 'radar',
-            data: {
-                labels: [
-                    splitLabel('Town & Directions Vocab'), 
-                    splitLabel('Family & House Vocab'), 
-                    splitLabel('Verb Conjugation'), 
-                    splitLabel('Reading Comprehension'), 
-                    splitLabel('Creative Writing'),
-                    splitLabel('Adjective Agreement')
-                ],
-                datasets: [{
-                    label: 'Proficiency Score (%)',
-                    data: [95, 90, 65, 100, 92, 70],
-                    backgroundColor: 'rgba(37, 99, 235, 0.2)',
-                    borderColor: '#2563EB',
-                    pointBackgroundColor: '#F97316',
-                    pointBorderColor: '#fff',
-                    pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: '#F97316'
-                }]
-            },
-            options: {
-                maintainAspectRatio: false,
-                scales: {
-                    r: {
-                        angleLines: { color: '#E2E8F0' },
-                        grid: { color: '#E2E8F0' },
-                        pointLabels: {
-                            font: { size: 12, family: "'Poppins', sans-serif" },
-                            color: '#475569'
-                        },
-                        suggestedMin: 50,
-                        suggestedMax: 100
-                    }
-                },
-                plugins: {
-                    tooltip: commonTooltipOptions,
-                    legend: { display: false }
-                }
-            }
-        });
+  const metrics = useMemo(() => calculateMetrics(sleep, diet, exercise, stress, age), [sleep, diet, exercise, stress, age]);
 
-        // --- CHART 2: SCORE DISTRIBUTION (Chart.js) ---
-        const ctxDoughnut = document.getElementById('scoreDistributionChart').getContext('2d');
-        new Chart(ctxDoughnut, {
-            type: 'doughnut',
-            data: {
-                labels: ['Correct Answers', 'Incorrect Answers'],
-                datasets: [{
-                    data: [85.75, 14.25],
-                    backgroundColor: [
-                        '#14B8A6', // Teal (Correct)
-                        '#F97316'  // Orange (Incorrect)
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                maintainAspectRatio: false,
-                cutout: '70%',
-                plugins: {
-                    tooltip: commonTooltipOptions,
-                    legend: {
-                        position: 'bottom',
-                        labels: { font: { family: "'Poppins', sans-serif" } }
-                    }
-                }
-            }
-        });
+  const reset = () => {
+    setAge(25);
+    setSleep(7.5);
+    setDiet({ veg: 5, prot: 5, grain: 5, junk: 2 });
+    setExercise({ intensity: 50 });
+    setStress({ load: 40, mgmt: 30 });
+  };
 
-        // --- CHART 3: ERROR ANALYSIS (Chart.js Bar) ---
-        const ctxBar = document.getElementById('errorAnalysisChart').getContext('2d');
-        new Chart(ctxBar, {
-            type: 'bar',
-            data: {
-                labels: [
-                    splitLabel('Verb "Ir" (To Go)'),
-                    splitLabel('Verb "Ser" (To Be)'),
-                    splitLabel('Verb "Tener" (To Have)'),
-                    splitLabel('Adjective "Feo" (Ugly)'),
-                    splitLabel('Season "Verano" (Summer)')
-                ],
-                datasets: [{
-                    label: 'Points Lost (Weighted Impact)',
-                    data: [1, 1, 1, 1, 1],
-                    backgroundColor: '#F97316',
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                maintainAspectRatio: false,
-                indexAxis: 'y',
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        display: false
-                    },
-                    y: {
-                        grid: { display: false },
-                        ticks: {
-                            font: { family: "'Poppins', sans-serif" },
-                            color: '#475569'
-                        }
-                    }
-                },
-                plugins: {
-                    tooltip: commonTooltipOptions,
-                    legend: { display: false }
-                }
-            }
-        });
+  return (
+    <div className="min-h-screen bg-slate-100 p-4 font-sans text-slate-800">
+      
+      {/* Top Bar */}
+      <div className="max-w-7xl mx-auto flex items-center justify-between mb-6 bg-white p-4 rounded-xl shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="bg-blue-600 p-2 rounded-lg text-white">
+            <Dna size={24} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">VITALITY LAB</h1>
+            <p className="text-xs text-slate-500 font-medium uppercase tracking-widest">Interactive Health Simulation</p>
+          </div>
+        </div>
+        <button onClick={reset} className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-full font-bold text-slate-600 text-sm transition-colors">
+          <RotateCcw size={16} /> Reset
+        </button>
+      </div>
 
-        // --- CHART 4: HEATMAP (Plotly.js) ---
-        const zValues = [
-            [95, 90, 80],
-            [60, 70, 65],
-            [100, 95, 90]
-        ];
+      <div className="max-w-7xl mx-auto grid grid-cols-12 gap-6 h-[calc(100vh-140px)]">
         
-        const xValues = ['Multiple Choice', 'Fill in Blank', 'Composition'];
-        const yValues = ['Vocabulary', 'Grammar', 'Writing'];
+        {/* LEFT: Controls */}
+        <div className="col-span-12 md:col-span-3 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+          
+          {/* Identity Control */}
+          <ControlPanel title="Subject Identity" icon={User} color="blue">
+            <div className="flex bg-slate-100 p-1 rounded-lg">
+              {['male', 'female'].map(g => (
+                <button 
+                  key={g}
+                  onClick={() => setGender(g)}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-md capitalize transition-all ${gender === g ? 'bg-white shadow text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+            <Slider label="Chronological Age" value={age} min={18} max={90} onChange={setAge} unit="yrs" />
+          </ControlPanel>
 
-        const dataPlotly = [{
-            z: zValues,
-            x: xValues,
-            y: yValues,
-            type: 'heatmap',
-            colorscale: [
-                [0, '#F97316'],
-                [0.5, '#FDBA74'],
-                [0.7, '#14B8A6'],
-                [1, '#2563EB']
-            ],
-            showscale: true
-        }];
+          {/* Sleep */}
+          <ControlPanel title="Sleep Hygiene" icon={Moon} color="indigo">
+            <Slider label="Nightly Duration" value={sleep} min={0} max={12} onChange={setSleep} unit="hrs" />
+          </ControlPanel>
 
-        const layoutPlotly = {
-            margin: { t: 30, l: 100, r: 30, b: 30 },
-            font: { family: 'Poppins, sans-serif' },
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            autosize: true
-        };
+          {/* Diet */}
+          <ControlPanel title="Dietary Composition" icon={Utensils} color="green">
+            <Slider label="Vegetables & Fruits" value={diet.veg} min={0} max={10} onChange={v => setDiet({...diet, veg: v})} unit="" />
+            <Slider label="Lean Protein" value={diet.prot} min={0} max={10} onChange={v => setDiet({...diet, prot: v})} unit="" />
+            <Slider label="Processed/Sugar" value={diet.junk} min={0} max={10} onChange={v => setDiet({...diet, junk: v})} unit="" />
+          </ControlPanel>
 
-        const configPlotly = {
-            responsive: true,
-            displayModeBar: false
-        };
+          {/* Exercise */}
+          <ControlPanel title="Activity Level" icon={Activity} color="orange">
+            <Slider label="Weekly Intensity" value={exercise.intensity} min={0} max={100} onChange={v => setExercise({...exercise, intensity: v})} unit="%" />
+          </ControlPanel>
 
-        Plotly.newPlot('topicHeatmap', dataPlotly, layoutPlotly, configPlotly);
+          {/* Stress */}
+          <ControlPanel title="Stress Factors" icon={Brain} color="purple">
+            <Slider label="External Load" value={stress.load} min={0} max={100} onChange={v => setStress({...stress, load: v})} unit="%" />
+            <Slider label="Active Management" value={stress.mgmt} min={0} max={100} onChange={v => setStress({...stress, mgmt: v})} unit="%" />
+          </ControlPanel>
+        </div>
 
-    </script>
-</body>
-</html>
+        {/* CENTER: The Stage (PhET Style) */}
+        <div className="col-span-12 md:col-span-6 flex flex-col">
+          <div className="flex-1 bg-white rounded-2xl shadow-lg border border-slate-200 relative overflow-hidden flex items-center justify-center p-8">
+            
+            {/* Background Decor (Grid/Floor) */}
+            <div className="absolute inset-0 opacity-5 pointer-events-none">
+              <div className="h-3/4 w-full bg-slate-200" style={{backgroundSize: '40px 40px', backgroundImage: 'linear-gradient(to right, #94a3b8 1px, transparent 1px), linear-gradient(to bottom, #94a3b8 1px, transparent 1px)'}}></div>
+              <div className="h-1/4 w-full bg-slate-300"></div>
+            </div>
+
+            {/* The Avatar */}
+            <div className="relative z-10 w-full max-w-sm h-full">
+              <Humanoid gender={gender} age={age} metrics={metrics} diet={diet} exercise={exercise} />
+            </div>
+
+            {/* Live Stats Overlay */}
+            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur p-4 rounded-xl border border-slate-200 shadow-sm text-right">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Biological Age</h3>
+              <div className={`text-3xl font-black ${metrics.biologicalAge > age ? 'text-red-500' : 'text-green-500'}`}>
+                {Math.round(metrics.biologicalAge)} <span className="text-sm text-slate-400 font-medium">yrs</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* RIGHT: Data Output */}
+        <div className="col-span-12 md:col-span-3 space-y-4">
+          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-full flex flex-col">
+            <div className="flex items-center gap-2 mb-6 text-slate-700">
+              <Info size={20} />
+              <h2 className="font-bold uppercase text-sm tracking-wide">Real-time Analysis</h2>
+            </div>
+            
+            <div className="space-y-6 flex-1">
+              {/* Metric Bars */}
+              {[
+                { label: "Energy & Vitality", val: metrics.energy, icon: Battery, color: "yellow" },
+                { label: "Mood Balance", val: metrics.mood, icon: Smile, color: "purple" },
+                { label: "Immune Response", val: metrics.immunity, icon: Shield, color: "green" },
+                { label: "Heart Health", val: (metrics.eScore + metrics.dScore)/2, icon: Heart, color: "rose" }
+              ].map((m, i) => (
+                <div key={i}>
+                  <div className="flex justify-between items-center mb-1 text-sm font-semibold text-slate-600">
+                    <div className="flex items-center gap-2">
+                      <m.icon size={14} /> {m.label}
+                    </div>
+                    <span>{Math.round(m.val)}</span>
+                  </div>
+                  <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full bg-${m.color}-500 transition-all duration-700`}
+                      style={{ width: `${m.val}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-slate-100 bg-slate-50 -mx-5 -mb-5 p-5 rounded-b-xl">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Observations</h4>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                {metrics.biologicalAge > age + 5 && "⚠️ Your lifestyle is causing premature aging."}
+                {metrics.biologicalAge < age - 2 && "🌟 Excellent! You are biologically younger than your calendar age."}
+                {Math.abs(metrics.biologicalAge - age) <= 2 && "✅ Your health is consistent with your age."}
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+      `}</style>
+    </div>
+  );
+}
