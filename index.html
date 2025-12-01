@@ -2,887 +2,115 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Healthy Habits Simulation</title>
+  <title>Diego's Science Simulations</title>
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
     body {
       margin: 0;
-      padding: 0;
-      background: #f2f5fb;
-      color: #1f2933;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
       display: flex;
       justify-content: center;
-      align-items: stretch;
-      height: 100vh;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 32px 16px;
     }
-
-    .app {
-      width: 1200px;
-      max-width: 100%;
-      margin: 12px;
-      background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+    .container {
+      max-width: 900px;
+      width: 100%;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+    .subtitle {
+      margin-bottom: 20px;
+      font-size: 14px;
+      opacity: 0.85;
+    }
+    .grid {
       display: grid;
-      grid-template-columns: 350px 1fr;
-      overflow: hidden;
-    }
-
-    .sidebar {
-      padding: 18px 20px 16px;
-      background: linear-gradient(135deg, #e0f2fe, #fef9c3);
-      border-right: 1px solid rgba(148, 163, 184, 0.3);
-      display: flex;
-      flex-direction: column;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 16px;
     }
-
-    .main {
-      padding: 18px 24px 24px;
+    .card {
+      background: #020617;
+      border-radius: 14px;
+      padding: 14px 16px;
+      border: 1px solid rgba(148,163,184,0.4);
+      box-shadow: 0 10px 25px rgba(15,23,42,0.45);
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 6px;
     }
-
-    h1 {
-      font-size: 20px;
+    .card h2 {
       margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      font-size: 16px;
     }
-
-    .subtitle {
+    .card p {
+      margin: 0;
       font-size: 13px;
-      opacity: 0.85;
-      margin-top: 4px;
-      line-height: 1.4;
+      opacity: 0.9;
     }
-
-    .pill {
+    .tag-row {
+      font-size: 11px;
+      opacity: 0.85;
+    }
+    a.button {
+      margin-top: 8px;
       display: inline-flex;
       align-items: center;
-      font-size: 11px;
-      padding: 3px 8px;
+      justify-content: center;
+      padding: 6px 10px;
       border-radius: 999px;
-      background: rgba(15, 118, 110, 0.08);
-      color: #075985;
-      font-weight: 600;
-      margin-top: 4px;
-      gap: 4px;
-    }
-
-    .controls-group {
-      background: rgba(255, 255, 255, 0.8);
-      border-radius: 12px;
-      padding: 10px 12px;
-      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
-      border: 1px solid rgba(148, 163, 184, 0.35);
-    }
-
-    .controls-group h2 {
-      font-size: 14px;
-      margin: 0 0 4px 0;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .controls-group p {
-      font-size: 11px;
-      margin: 0 0 6px 0;
-      opacity: 0.9;
-    }
-
-    .control {
-      margin-bottom: 8px;
-    }
-
-    .control:last-child {
-      margin-bottom: 0;
-    }
-
-    .control-label {
-      font-size: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 2px;
-    }
-
-    .control-label span.value {
-      font-weight: 600;
-      font-size: 11px;
-      color: #0369a1;
-    }
-
-    input[type="range"] {
-      width: 100%;
-      accent-color: #0ea5e9;
-    }
-
-    select {
-      width: 100%;
-      padding: 4px 8px;
-      border-radius: 8px;
-      border: 1px solid rgba(148, 163, 184, 0.7);
-      font-size: 12px;
-      background: rgba(255, 255, 255, 0.9);
-    }
-
-    .note {
-      font-size: 11px;
-      opacity: 0.85;
-      padding: 6px 8px;
-      border-radius: 8px;
-      background: rgba(15, 23, 42, 0.04);
-      border: 1px dashed rgba(148, 163, 184, 0.6);
-    }
-
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .top-bar-left {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .top-bar-title {
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    .top-bar-subtitle {
-      font-size: 12px;
-      opacity: 0.85;
-    }
-
-    .legend {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 11px;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      opacity: 0.9;
-    }
-
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      border: 1px solid rgba(15, 23, 42, 0.15);
-    }
-
-    .legend-dot.energy {
-      background: #bef264;
-    }
-
-    .legend-dot.mood {
-      background: #fbbf24;
-    }
-
-    .legend-dot.health {
-      background: #34d399;
-    }
-
-    .canvas-container {
-      flex: 1;
-      background: radial-gradient(circle at top, #e0f2fe 0, #e0f2fe 140px, #f9fafb 140px);
-      border-radius: 14px;
-      border: 1px solid rgba(148, 163, 184, 0.6);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    #avatarCanvas {
-      flex: 1;
-      background: linear-gradient(to top, #e5e7eb, #f9fafb);
-    }
-
-    .metrics-panel {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      padding: 8px 12px 10px;
-      background: rgba(15, 23, 42, 0.02);
-      border-top: 1px solid rgba(148, 163, 184, 0.4);
-    }
-
-    .metric {
-      font-size: 11px;
-    }
-
-    .metric-label {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 2px;
-    }
-
-    .metric-label span.score {
-      font-weight: 600;
-    }
-
-    .metric-bar {
-      position: relative;
-      width: 100%;
-      height: 8px;
-      border-radius: 999px;
-      overflow: hidden;
-      background: rgba(148, 163, 184, 0.3);
-    }
-
-    .metric-fill {
-      position: absolute;
-      top: 0;
-      left: 0;
-      height: 8px;
-      border-radius: 999px;
-      transition: width 0.25s ease-out;
-    }
-
-    .metric-fill.energy {
-      background: #a3e635;
-    }
-
-    .metric-fill.mood {
-      background: #facc15;
-    }
-
-    .metric-fill.health {
       background: #22c55e;
-    }
-
-    .footer-note {
-      font-size: 10px;
-      opacity: 0.8;
-      margin-top: 2px;
-      text-align: right;
-    }
-
-    .btn-row {
-      display: flex;
-      justify-content: flex-end;
-      gap: 6px;
-      margin-top: 4px;
-    }
-
-    button {
-      border-radius: 999px;
-      border: none;
-      padding: 5px 10px;
-      font-size: 11px;
-      cursor: pointer;
-      background: #0ea5e9;
-      color: white;
+      color: #022c22;
+      font-size: 12px;
       font-weight: 600;
-      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.2);
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
     }
-
-    button.secondary {
-      background: #e5e7eb;
-      color: #111827;
-      box-shadow: none;
-    }
-
-    @media (max-width: 900px) {
-      body {
-        height: auto;
-      }
-
-      .app {
-        height: auto;
-        grid-template-columns: 1fr;
-      }
-
-      .sidebar {
-        border-right: none;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.3);
-      }
-
-      .canvas-container {
-        height: 420px;
-      }
+    a.button:hover {
+      background: #4ade80;
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar">
-      <div>
-        <h1>Healthy Habits Lab 🧪</h1>
-        <div class="subtitle">
-          Explore how <strong>sleep</strong>, <strong>stress</strong>,
-          <strong>diet</strong>, and <strong>exercise</strong> shape a body over time.
-        </div>
-        <div class="pill">
-          <span>Interactive model</span> · <span>Not medical advice</span>
-        </div>
+  <div class="container">
+    <h1>Science Sim Lab</h1>
+    <div class="subtitle">
+      Click a simulation to explore concepts interactively. Best viewed in Chrome on desktop.
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Healthy Habits Lab</h2>
+        <p>
+          Explore how sleep, stress, diet and exercise change a person’s energy, mood and long-term health.
+        </p>
+        <div class="tag-row">Topic: Health & wellbeing · Age 11–16</div>
+        <a class="button" href="health-sim.html">Open simulation</a>
       </div>
 
-      <div class="controls-group">
-        <h2>1. Person setup</h2>
-        <p>Choose age and see the avatars scale from child to older adult.</p>
-
-        <div class="control">
-          <div class="control-label">
-            <span>Age</span>
-            <span class="value"><span id="ageValue">30</span> years</span>
-          </div>
-          <input type="range" id="age" min="5" max="80" value="30" />
-        </div>
-
-        <div class="note">
-          You see <strong>two avatars</strong> in the scene: a male and a female,
-          both responding to the same lifestyle settings so students can focus on
-          habits rather than stereotypes.
-        </div>
+      <div class="card">
+        <h2>Sound Waves Explorer</h2>
+        <p>
+          Compare instruments and see how pitch and volume change the shape of the sound waves.
+        </p>
+        <div class="tag-row">Topic: Physics of sound · Age 11–15</div>
+        <a class="button" href="sound-waves.html">Open simulation</a>
       </div>
 
-      <div class="controls-group">
-        <h2>2. Daily habits</h2>
-        <p>Adjust the main lifestyle factors. Try extreme values, then balance.</p>
-
-        <div class="control">
-          <div class="control-label">
-            <span>Sleep (hours / night)</span>
-            <span class="value"><span id="sleepValue">8</span> h</span>
-          </div>
-          <input type="range" id="sleep" min="0" max="12" value="8" />
-        </div>
-
-        <div class="control">
-          <div class="control-label">
-            <span>Stress level</span>
-            <span class="value">0 = calm · 10 = very stressed (<span id="stressValue">3</span>)</span>
-          </div>
-          <input type="range" id="stress" min="0" max="10" value="3" />
-        </div>
-
-        <div class="control">
-          <div class="control-label">
-            <span>Diet quality</span>
-            <span class="value">Harvard plate style: <span id="dietValue">7</span>/10</span>
-          </div>
-          <input type="range" id="diet" min="0" max="10" value="7" />
-        </div>
-
-        <div class="control">
-          <div class="control-label">
-            <span>Exercise</span>
-            <span class="value">0 = none · 10 = excessive (<span id="exerciseValue">6</span>)</span>
-          </div>
-          <input type="range" id="exercise" min="0" max="10" value="6" />
-        </div>
+      <div class="card">
+        <h2>Ear Anatomy & Hearing</h2>
+        <p>
+          Travel from outer ear to brain and see how vibrations become signals you can understand.
+        </p>
+        <div class="tag-row">Topic: Biology · Age 10–14</div>
+        <a class="button" href="ear-structure.html">Open simulation</a>
       </div>
-
-      <div class="controls-group">
-        <h2>3. Teacher tools</h2>
-        <p>Use these presets during class to create “what if” scenarios.</p>
-
-        <div class="btn-row">
-          <button type="button" id="presetBalanced">Balanced day</button>
-          <button type="button" class="secondary" id="presetExams">
-            Exam week
-          </button>
-        </div>
-
-        <div class="note">
-          Encourage students to explain <strong>why</strong> the avatar changes.
-          They can connect each slider with systems: heart, brain, immune system, etc.
-        </div>
-      </div>
-    </aside>
-
-    <main class="main">
-      <div class="top-bar">
-        <div class="top-bar-left">
-          <div class="top-bar-title">Body response visualiser</div>
-          <div class="top-bar-subtitle">
-            Avatars show body shape, posture and “glow” as a simplified proxy for long-term health.
-          </div>
-        </div>
-        <div class="legend">
-          <div class="legend-item">
-            <div class="legend-dot energy"></div>
-            <span>Energy</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-dot mood"></div>
-            <span>Mood / focus</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-dot health"></div>
-            <span>Long-term health</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="canvas-container">
-        <canvas id="avatarCanvas" width="800" height="360"></canvas>
-        <div class="metrics-panel">
-          <div class="metric">
-            <div class="metric-label">
-              <span>Energy today</span>
-              <span class="score" id="energyScoreLabel">–</span>
-            </div>
-            <div class="metric-bar">
-              <div class="metric-fill energy" id="energyBar"></div>
-            </div>
-          </div>
-          <div class="metric">
-            <div class="metric-label">
-              <span>Mood & focus</span>
-              <span class="score" id="moodScoreLabel">–</span>
-            </div>
-            <div class="metric-bar">
-              <div class="metric-fill mood" id="moodBar"></div>
-            </div>
-          </div>
-          <div class="metric">
-            <div class="metric-label">
-              <span>Long-term health</span>
-              <span class="score" id="healthScoreLabel">–</span>
-            </div>
-            <div class="metric-bar">
-              <div class="metric-fill health" id="healthBar"></div>
-            </div>
-          </div>
-        </div>
-        <div class="footer-note">
-          Model is simplified for learning. Real human health is more complex and individual.
-        </div>
-      </div>
-    </main>
+    </div>
   </div>
-
-  <script>
-    const ageInput = document.getElementById('age');
-    const sleepInput = document.getElementById('sleep');
-    const stressInput = document.getElementById('stress');
-    const dietInput = document.getElementById('diet');
-    const exerciseInput = document.getElementById('exercise');
-
-    const ageValue = document.getElementById('ageValue');
-    const sleepValue = document.getElementById('sleepValue');
-    const stressValue = document.getElementById('stressValue');
-    const dietValue = document.getElementById('dietValue');
-    const exerciseValue = document.getElementById('exerciseValue');
-
-    const avatarCanvas = document.getElementById('avatarCanvas');
-    const ctx = avatarCanvas.getContext('2d');
-
-    const energyBar = document.getElementById('energyBar');
-    const moodBar = document.getElementById('moodBar');
-    const healthBar = document.getElementById('healthBar');
-
-    const energyScoreLabel = document.getElementById('energyScoreLabel');
-    const moodScoreLabel = document.getElementById('moodScoreLabel');
-    const healthScoreLabel = document.getElementById('healthScoreLabel');
-
-    const presetBalanced = document.getElementById('presetBalanced');
-    const presetExams = document.getElementById('presetExams');
-
-    function clamp(v, min, max) {
-      return Math.min(max, Math.max(min, v));
-    }
-
-    // Core model: combine lifestyle into simplified scores (0–1)
-    function computeScores() {
-      const age = parseInt(ageInput.value, 10);
-      const sleep = parseFloat(sleepInput.value);
-      const stress = parseFloat(stressInput.value);
-      const diet = parseFloat(dietInput.value);
-      const exercise = parseFloat(exerciseInput.value);
-
-      const sleepFactor = Math.max(0, 1 - Math.abs(sleep - 8) / 4); // best 7–9 h
-      const stressFactor = 1 - stress / 10; // lower is better
-      const dietFactor = diet / 10; // Harvard-style plate = high
-      const exerciseFactor = Math.max(
-        0,
-        1 - Math.abs(exercise - 6) / 6 // moderate best
-      );
-
-      const baseHealth =
-        (sleepFactor + stressFactor + dietFactor + exerciseFactor) / 4;
-
-      const ageFactor =
-        age <= 40
-          ? 1
-          : Math.max(0.5, 1 - (age - 40) / 80); // gentle decline, never below 0.5
-
-      const longTermHealth = clamp(baseHealth * ageFactor, 0, 1);
-
-      // Energy is very sensitive to sleep & stress
-      const energy = clamp(
-        0.15 +
-          0.45 * sleepFactor +
-          0.35 * stressFactor +
-          0.05 * exerciseFactor,
-        0,
-        1
-      );
-
-      // Mood/focus sensitive to stress, sleep, and diet
-      const mood = clamp(
-        0.1 +
-          0.4 * stressFactor +
-          0.25 * sleepFactor +
-          0.25 * dietFactor,
-        0,
-        1
-      );
-
-      return {
-        energy,
-        mood,
-        longTermHealth,
-        sleepFactor,
-        stressFactor,
-        dietFactor,
-        exerciseFactor,
-        age,
-      };
-    }
-
-    function lerp(a, b, t) {
-      return a + (b - a) * t;
-    }
-
-    function lerpColor(c1, c2, t) {
-      return {
-        r: Math.round(lerp(c1.r, c2.r, t)),
-        g: Math.round(lerp(c1.g, c2.g, t)),
-        b: Math.round(lerp(c1.b, c2.b, t)),
-      };
-    }
-
-    function rgbToString(c, alpha = 1) {
-      return `rgba(${c.r}, ${c.g}, ${c.b}, ${alpha})`;
-    }
-
-    // Draw a simple humanoid avatar
-    function drawCharacter(xCenter, sex, scores) {
-      const { longTermHealth, energy, mood, age } = scores;
-
-      const scale = 0.6 + (age / 80) * 0.6; // children smaller, adults taller
-      const baseHeight = 140 * scale;
-      const baseWidth = 40 * scale;
-
-      const weightFactor = 1.2 - longTermHealth * 0.4; // less healthy = wider
-      const torsoWidth = baseWidth * weightFactor;
-      const torsoHeight = baseHeight * 0.45;
-      const legHeight = baseHeight * 0.4;
-      const headRadius = 16 * scale;
-
-      const baselineY = avatarCanvas.height - 30;
-
-      const healthyBodyColor = { r: 180, g: 230, b: 180 };
-      const unhealthyBodyColor = { r: 200, g: 200, b: 200 };
-      const bodyColor = lerpColor(
-        unhealthyBodyColor,
-        healthyBodyColor,
-        longTermHealth
-      );
-
-      const healthyFaceColor = { r: 255, g: 223, b: 185 };
-      const tiredFaceColor = { r: 220, g: 205, b: 190 };
-      const faceColor = lerpColor(tiredFaceColor, healthyFaceColor, energy);
-
-      const shirtColorMale = { r: 59, g: 130, b: 246 };
-      const shirtColorFemale = { r: 236, g: 72, b: 153 };
-      const shirtBaseColor = sex === 'male' ? shirtColorMale : shirtColorFemale;
-      const shirtColor = lerpColor(
-        { r: 148, g: 163, b: 184 },
-        shirtBaseColor,
-        longTermHealth
-      );
-
-      const pantsColor = { r: 30, g: 64, b: 175 };
-
-      // Subtle "glow" for good health
-      if (longTermHealth > 0.6) {
-        ctx.save();
-        ctx.shadowColor = rgbToString({ r: 74, g: 222, b: 128 }, 0.5);
-        ctx.shadowBlur = 18 * longTermHealth;
-      }
-
-      const torsoTopY = baselineY - legHeight - torsoHeight;
-      const torsoLeftX = xCenter - torsoWidth / 2;
-
-      ctx.fillStyle = rgbToString(bodyColor);
-      ctx.beginPath();
-      ctx.roundRect(
-        torsoLeftX,
-        torsoTopY,
-        torsoWidth,
-        torsoHeight,
-        10 * scale
-      );
-      ctx.fill();
-
-      // Shirt overlay
-      ctx.fillStyle = rgbToString(shirtColor);
-      ctx.beginPath();
-      ctx.roundRect(
-        torsoLeftX,
-        torsoTopY + torsoHeight * 0.18,
-        torsoWidth,
-        torsoHeight * 0.75,
-        10 * scale
-      );
-      ctx.fill();
-
-      // Legs
-      const legWidth = torsoWidth * 0.35;
-      const legGap = torsoWidth * 0.05;
-      ctx.fillStyle = rgbToString(pantsColor);
-
-      ctx.beginPath();
-      ctx.roundRect(
-        xCenter - legGap / 2 - legWidth,
-        baselineY - legHeight,
-        legWidth,
-        legHeight,
-        8 * scale
-      );
-      ctx.roundRect(
-        xCenter + legGap / 2,
-        baselineY - legHeight,
-        legWidth,
-        legHeight,
-        8 * scale
-      );
-      ctx.fill();
-
-      // Feet
-      ctx.fillStyle = '#111827';
-      const footHeight = 8 * scale;
-      ctx.beginPath();
-      ctx.roundRect(
-        xCenter - legGap / 2 - legWidth,
-        baselineY - footHeight,
-        legWidth,
-        footHeight,
-        4 * scale
-      );
-      ctx.roundRect(
-        xCenter + legGap / 2,
-        baselineY - footHeight,
-        legWidth,
-        footHeight,
-        4 * scale
-      );
-      ctx.fill();
-
-      // Arms
-      ctx.strokeStyle = rgbToString(bodyColor);
-      ctx.lineWidth = 8 * scale;
-      ctx.lineCap = 'round';
-
-      ctx.beginPath();
-      ctx.moveTo(torsoLeftX, torsoTopY + 20 * scale);
-      ctx.lineTo(
-        torsoLeftX - 22 * scale,
-        torsoTopY + torsoHeight * (0.6 + (1 - energy) * 0.1)
-      );
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(torsoLeftX + torsoWidth, torsoTopY + 20 * scale);
-      ctx.lineTo(
-        torsoLeftX + torsoWidth + 22 * scale,
-        torsoTopY + torsoHeight * (0.6 + (1 - energy) * 0.1)
-      );
-      ctx.stroke();
-
-      // Head
-      const headCenterY = torsoTopY - headRadius - 6 * scale;
-
-      ctx.fillStyle = rgbToString(faceColor);
-      ctx.beginPath();
-      ctx.arc(xCenter, headCenterY, headRadius, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Hair
-      ctx.fillStyle = sex === 'male' ? '#0f172a' : '#7c2d12';
-      ctx.beginPath();
-      ctx.arc(
-        xCenter,
-        headCenterY - 4 * scale,
-        headRadius,
-        Math.PI,
-        2 * Math.PI
-      );
-      ctx.fill();
-
-      if (sex === 'female') {
-        ctx.beginPath();
-        ctx.moveTo(xCenter - headRadius, headCenterY);
-        ctx.quadraticCurveTo(
-          xCenter - headRadius * 1.1,
-          headCenterY + headRadius * 1.5,
-          xCenter - headRadius * 0.5,
-          headCenterY + headRadius * 1.4
-        );
-        ctx.moveTo(xCenter + headRadius, headCenterY);
-        ctx.quadraticCurveTo(
-          xCenter + headRadius * 1.1,
-          headCenterY + headRadius * 1.5,
-          xCenter + headRadius * 0.5,
-          headCenterY + headRadius * 1.4
-        );
-        ctx.strokeStyle = ctx.fillStyle;
-        ctx.lineWidth = 6 * scale;
-        ctx.stroke();
-      }
-
-      // Face details
-      const eyeOffsetX = 7 * scale;
-      const eyeOffsetY = 2 * scale;
-      const eyeOpen = 2.4 + 1.8 * energy; // more open with more energy
-
-      ctx.fillStyle = '#0f172a';
-      ctx.beginPath();
-      ctx.ellipse(
-        xCenter - eyeOffsetX,
-        headCenterY - eyeOffsetY,
-        2.1 * scale,
-        eyeOpen,
-        0,
-        0,
-        Math.PI * 2
-      );
-      ctx.ellipse(
-        xCenter + eyeOffsetX,
-        headCenterY - eyeOffsetY,
-        2.1 * scale,
-        eyeOpen,
-        0,
-        0,
-        Math.PI * 2
-      );
-      ctx.fill();
-
-      const mouthWidth = 10 * scale;
-      const moodShift = (mood - 0.5) * 8 * scale; // smile vs frown
-      ctx.strokeStyle = '#0f172a';
-      ctx.lineWidth = 1.4 * scale;
-      ctx.beginPath();
-      ctx.arc(
-        xCenter,
-        headCenterY + 6 * scale + moodShift,
-        mouthWidth / 2,
-        0,
-        Math.PI
-      );
-      ctx.stroke();
-
-      if (longTermHealth > 0.6) {
-        ctx.restore();
-      }
-
-      // Name label
-      ctx.font = `${11 * scale}px system-ui`;
-      ctx.fillStyle = 'rgba(15,23,42,0.8)';
-      ctx.textAlign = 'center';
-      ctx.fillText(
-        sex === 'male' ? 'Male avatar' : 'Female avatar',
-        xCenter,
-        baselineY + 16
-      );
-    }
-
-    function updateMetrics(scores) {
-      const { energy, mood, longTermHealth } = scores;
-
-      const energyPct = Math.round(energy * 100);
-      const moodPct = Math.round(mood * 100);
-      const healthPct = Math.round(longTermHealth * 100);
-
-      energyBar.style.width = `${energyPct}%`;
-      moodBar.style.width = `${moodPct}%`;
-      healthBar.style.width = `${healthPct}%`;
-
-      energyScoreLabel.textContent = `${energyPct}/100`;
-      moodScoreLabel.textContent = `${moodPct}/100`;
-      healthScoreLabel.textContent = `${healthPct}/100`;
-    }
-
-    function render() {
-      ageValue.textContent = ageInput.value;
-      sleepValue.textContent = sleepInput.value;
-      stressValue.textContent = stressInput.value;
-      dietValue.textContent = dietInput.value;
-      exerciseValue.textContent = exerciseInput.value;
-
-      const scores = computeScores();
-
-      ctx.clearRect(0, 0, avatarCanvas.width, avatarCanvas.height);
-
-      // Ground
-      ctx.fillStyle = '#e5e7eb';
-      ctx.beginPath();
-      ctx.rect(0, avatarCanvas.height - 28, avatarCanvas.width, 28);
-      ctx.fill();
-
-      // Background hint (like a playground / park)
-      ctx.fillStyle = '#dbeafe';
-      ctx.beginPath();
-      ctx.arc(
-        avatarCanvas.width / 2,
-        avatarCanvas.height,
-        260,
-        Math.PI,
-        Math.PI * 2
-      );
-      ctx.fill();
-
-      // Draw avatars (male left, female right)
-      drawCharacter(avatarCanvas.width * 0.32, 'male', scores);
-      drawCharacter(avatarCanvas.width * 0.68, 'female', scores);
-
-      updateMetrics(scores);
-    }
-
-    [ageInput, sleepInput, stressInput, dietInput, exerciseInput].forEach(
-      (input) => {
-        input.addEventListener('input', render);
-      }
-    );
-
-    presetBalanced.addEventListener('click', () => {
-      ageInput.value = 30;
-      sleepInput.value = 8;
-      stressInput.value = 3;
-      dietInput.value = 8;
-      exerciseInput.value = 6;
-      render();
-    });
-
-    presetExams.addEventListener('click', () => {
-      sleepInput.value = 5;
-      stressInput.value = 8;
-      dietInput.value = 4;
-      exerciseInput.value = 2;
-      render();
-    });
-
-    render();
-  </script>
 </body>
 </html>
