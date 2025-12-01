@@ -1,410 +1,888 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  Moon, 
-  Utensils, 
-  Activity, 
-  Brain, 
-  RotateCcw,
-  Info,
-  User,
-  Heart,
-  Battery,
-  Smile,
-  Shield,
-  Dna
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Healthy Habits Simulation</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
 
-// --- Simulation Logic ---
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f2f5fb;
+      color: #1f2933;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      height: 100vh;
+    }
 
-const calculateMetrics = (sleep, diet, exercise, stress, age) => {
-  // 1. Sleep Score (Bell curve around 8h)
-  let sScore = 100 - Math.abs(8 - sleep) * 15;
-  if (sleep < 4) sScore = 20;
-  sScore = Math.max(0, Math.min(100, sScore));
+    .app {
+      width: 1200px;
+      max-width: 100%;
+      margin: 12px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      overflow: hidden;
+    }
 
-  // 2. Diet Score (Harvard Plate Balance)
-  const totalDiet = diet.veg + diet.prot + diet.grain + diet.junk;
-  let dScore = 0;
-  if (totalDiet > 0) {
-    const pVeg = (diet.veg / totalDiet) * 100;
-    const pProt = (diet.prot / totalDiet) * 100;
-    const pJunk = (diet.junk / totalDiet) * 100;
-    
-    // Ideal: 50% Veg, 25% Prot. Penalty for junk.
-    const quality = 100 - (Math.abs(50 - pVeg) + Math.abs(25 - pProt));
-    dScore = Math.max(0, quality - (pJunk * 2));
-  }
+    .sidebar {
+      padding: 18px 20px 16px;
+      background: linear-gradient(135deg, #e0f2fe, #fef9c3);
+      border-right: 1px solid rgba(148, 163, 184, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
 
-  // 3. Exercise Score
-  // Intensity needs to be moderate-high, but not extreme without sleep
-  let eScore = exercise.intensity;
-  if (exercise.intensity > 80 && sScore < 50) eScore -= 40; // Overtraining penalty
-  eScore = Math.max(0, Math.min(100, eScore));
+    .main {
+      padding: 18px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
 
-  // 4. Stress Score (Net Stress)
-  const netStress = Math.max(0, stress.load - stress.mgmt);
-  const strScore = Math.max(0, 100 - netStress);
+    h1 {
+      font-size: 20px;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-  // --- Derived Biometrics ---
-  
-  // Age Factor: As you get older, it's harder to maintain high vitality
-  const agePenalty = Math.max(0, (age - 30) * 0.5); 
+    .subtitle {
+      font-size: 13px;
+      opacity: 0.85;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
 
-  // Energy: Driven by Sleep & Diet
-  let energy = (sScore * 0.5 + dScore * 0.3 + eScore * 0.2) - (agePenalty * 0.5);
-  
-  // Mood: Driven by Stress & Exercise
-  let mood = (strScore * 0.4 + sScore * 0.3 + eScore * 0.3);
-  
-  // Immunity: Driven by Diet & Sleep
-  let immunity = (dScore * 0.5 + sScore * 0.4 + eScore * 0.1) - (agePenalty * 0.8);
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(15, 118, 110, 0.08);
+      color: #075985;
+      font-weight: 600;
+      margin-top: 4px;
+      gap: 4px;
+    }
 
-  // Biological Age (Visual aging): Chronological age + penalty for bad habits
-  const vitalityAvg = (energy + mood + immunity) / 3;
-  const biologicalAge = age + ((100 - vitalityAvg) / 5);
+    .controls-group {
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 12px;
+      padding: 10px 12px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+    }
 
-  return {
-    energy: Math.max(10, Math.min(100, energy)),
-    mood: Math.max(10, Math.min(100, mood)),
-    immunity: Math.max(10, Math.min(100, immunity)),
-    vitality: Math.max(0, Math.min(100, vitalityAvg)),
-    biologicalAge,
-    sScore, dScore, eScore, strScore
-  };
-};
+    .controls-group h2 {
+      font-size: 14px;
+      margin: 0 0 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
 
-// --- Visual Components ---
+    .controls-group p {
+      font-size: 11px;
+      margin: 0 0 6px 0;
+      opacity: 0.9;
+    }
 
-const Humanoid = ({ gender, age, metrics, diet, exercise }) => {
-  // Visual Parameters derived from state
-  
-  // 1. Posture (0 = slumped, 1 = upright)
-  const posture = metrics.energy / 100; 
-  const headY = 40 + (1 - posture) * 15; // Head drops when tired
-  const shoulderY = 75 + (1 - posture) * 10;
-  
-  // 2. Body Composition
-  // "Width" driven by Junk Food vs Exercise
-  const caloricExcess = (diet.junk * 2 + diet.grain) - (exercise.intensity / 5);
-  const bodyWidth = 40 + Math.max(0, caloricExcess * 2); // Base width 40
-  
-  // 3. Muscle Definition (Stroke width)
-  const muscle = 2 + (exercise.intensity / 20);
+    .control {
+      margin-bottom: 8px;
+    }
 
-  // 4. Aging (Hair & Wrinkles)
-  const isOld = metrics.biologicalAge > 60;
-  const isVeryOld = metrics.biologicalAge > 80;
-  const hairColor = metrics.biologicalAge > 65 ? "#e2e8f0" : metrics.biologicalAge > 45 ? "#94a3b8" : "#3f2c22";
-  
-  // Gender shapes
-  const isFemale = gender === 'female';
-  const hipWidth = isFemale ? bodyWidth + 15 : bodyWidth;
-  const shoulderWidth = isFemale ? bodyWidth : bodyWidth + 15;
+    .control:last-child {
+      margin-bottom: 0;
+    }
 
-  // Colors based on health
-  const skinTone = metrics.immunity < 40 ? "#e2e8d0" : "#f5d0b0"; // Pale if sick
-  const shirtColor = isFemale ? "#f472b6" : "#60a5fa";
+    .control-label {
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 2px;
+    }
 
-  return (
-    <svg viewBox="0 0 200 400" className="w-full h-full drop-shadow-2xl transition-all duration-700">
-      <defs>
-        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="5" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
-      </defs>
+    .control-label span.value {
+      font-weight: 600;
+      font-size: 11px;
+      color: #0369a1;
+    }
 
-      {/* Aura / Vitality Glow */}
-      <ellipse 
-        cx="100" cy="200" 
-        rx={60 + metrics.vitality/2} ry={150} 
-        fill={metrics.vitality > 80 ? "rgba(74, 222, 128, 0.2)" : "rgba(0,0,0,0)"} 
-        filter="url(#glow)"
-        className="transition-all duration-1000"
-      />
+    input[type="range"] {
+      width: 100%;
+      accent-color: #0ea5e9;
+    }
 
-      {/* LEGS */}
-      <g stroke={skinTone} strokeWidth={muscle + 10} strokeLinecap="round">
-        <line x1="85" y1="220" x2="85" y2="380" />
-        <line x1="115" y1="220" x2="115" y2="380" />
-      </g>
-      {/* Clothing (Pants) */}
-      <g stroke="#334155" strokeWidth={muscle + 12} strokeLinecap="round">
-         <line x1="85" y1="220" x2="85" y2="300" />
-         <line x1="115" y1="220" x2="115" y2="300" />
-      </g>
+    select {
+      width: 100%;
+      padding: 4px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.9);
+    }
 
-      {/* TORSO */}
-      {/* Dynamic shape based on gender and weight */}
-      <path 
-        d={`
-          M ${100 - shoulderWidth/2} ${shoulderY} 
-          Q ${100 - bodyWidth/2} 150 ${100 - hipWidth/2} 220 
-          L ${100 + hipWidth/2} 220 
-          Q ${100 + bodyWidth/2} 150 ${100 + shoulderWidth/2} ${shoulderY} 
-          Z
-        `} 
-        fill={shirtColor}
-        className="transition-all duration-700"
-      />
+    .note {
+      font-size: 11px;
+      opacity: 0.85;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.04);
+      border: 1px dashed rgba(148, 163, 184, 0.6);
+    }
 
-      {/* ARMS */}
-      <g stroke={skinTone} strokeWidth={muscle + 8} strokeLinecap="round">
-        {/* Left Arm - droops if posture is bad */}
-        <path d={`M ${100 - shoulderWidth/2} ${shoulderY + 5} Q ${60 - (1-posture)*10} 150 ${65} ${200 + (1-posture)*30}`} fill="none" />
-        {/* Right Arm */}
-        <path d={`M ${100 + shoulderWidth/2} ${shoulderY + 5} Q ${140 + (1-posture)*10} 150 ${135} ${200 + (1-posture)*30}`} fill="none" />
-      </g>
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
 
-      {/* HEAD Group (Moves with posture) */}
-      <g transform={`translate(0, ${headY - 40})`} className="transition-all duration-700">
-        
-        {/* Neck */}
-        <rect x="90" y="30" width="20" height="30" fill={skinTone} />
+    .top-bar-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
 
-        {/* Face Shape */}
-        <ellipse cx="100" cy="30" rx="28" ry="34" fill={skinTone} />
+    .top-bar-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
 
-        {/* Hair */}
-        {isFemale ? (
-           // Long Hair
-           <path d="M 70 10 Q 100 -10 130 10 L 135 60 Q 100 70 65 60 Z" fill={hairColor} />
-        ) : (
-           // Short Hair
-           <path d="M 72 15 Q 100 -5 128 15 L 128 30 Q 100 20 72 30 Z" fill={hairColor} />
-        )}
+    .top-bar-subtitle {
+      font-size: 12px;
+      opacity: 0.85;
+    }
 
-        {/* Eyes */}
-        <g fill="#1e293b">
-          <circle cx="90" cy="25" r={metrics.energy < 30 ? 1.5 : 2.5} />
-          <circle cx="110" cy="25" r={metrics.energy < 30 ? 1.5 : 2.5} />
-          {/* Bags under eyes if tired */}
-          {metrics.sScore < 40 && (
-            <g stroke="#000" strokeOpacity="0.1" strokeWidth="2" fill="none">
-              <path d="M 86 30 Q 90 33 94 30" />
-              <path d="M 106 30 Q 110 33 114 30" />
-            </g>
-          )}
-        </g>
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+    }
 
-        {/* Mouth - Mood Dependent */}
-        <path 
-          d={metrics.mood > 60 
-            ? "M 88 45 Q 100 55 112 45" // Smile
-            : metrics.mood < 40 
-              ? "M 88 50 Q 100 40 112 50" // Frown
-              : "M 90 48 L 110 48" // Neutral
-          }
-          stroke="#1e293b" 
-          strokeWidth="2" 
-          fill="none" 
-          strokeLinecap="round"
-        />
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      opacity: 0.9;
+    }
 
-        {/* Wrinkles (Age Dependent) */}
-        {isOld && (
-          <g stroke="#000" strokeOpacity="0.15" strokeWidth="1" fill="none">
-             <path d="M 85 15 Q 100 20 115 15" /> 
-             <path d="M 88 10 Q 100 15 112 10" />
-             {isVeryOld && <path d="M 100 45 L 100 55" />} {/* Mouth lines */}
-          </g>
-        )}
-      </g>
-    </svg>
-  );
-};
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1px solid rgba(15, 23, 42, 0.15);
+    }
 
-const ControlPanel = ({ title, icon: Icon, color, children }) => (
-  <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-4">
-    <div className={`px-4 py-3 bg-${color}-50 border-b border-${color}-100 flex items-center gap-2`}>
-      <Icon className={`text-${color}-600`} size={18} />
-      <span className={`font-bold text-${color}-900 text-sm uppercase tracking-wide`}>{title}</span>
-    </div>
-    <div className="p-4 space-y-4">
-      {children}
-    </div>
-  </div>
-);
+    .legend-dot.energy {
+      background: #bef264;
+    }
 
-const Slider = ({ label, value, min, max, onChange, unit }) => (
-  <div className="space-y-1">
-    <div className="flex justify-between text-xs font-semibold text-slate-600">
-      <label>{label}</label>
-      <span>{value} {unit}</span>
-    </div>
-    <input 
-      type="range" 
-      min={min} 
-      max={max} 
-      value={value} 
-      onChange={(e) => onChange(Number(e.target.value))}
-      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-    />
-  </div>
-);
+    .legend-dot.mood {
+      background: #fbbf24;
+    }
 
-// --- Main Application ---
+    .legend-dot.health {
+      background: #34d399;
+    }
 
-export default function VitalityLab() {
-  const [gender, setGender] = useState('female');
-  const [age, setAge] = useState(25);
-  
-  const [sleep, setSleep] = useState(7.5);
-  const [diet, setDiet] = useState({ veg: 5, prot: 5, grain: 5, junk: 2 });
-  const [exercise, setExercise] = useState({ intensity: 50 });
-  const [stress, setStress] = useState({ load: 40, mgmt: 30 });
+    .canvas-container {
+      flex: 1;
+      background: radial-gradient(circle at top, #e0f2fe 0, #e0f2fe 140px, #f9fafb 140px);
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
 
-  const metrics = useMemo(() => calculateMetrics(sleep, diet, exercise, stress, age), [sleep, diet, exercise, stress, age]);
+    #avatarCanvas {
+      flex: 1;
+      background: linear-gradient(to top, #e5e7eb, #f9fafb);
+    }
 
-  const reset = () => {
-    setAge(25);
-    setSleep(7.5);
-    setDiet({ veg: 5, prot: 5, grain: 5, junk: 2 });
-    setExercise({ intensity: 50 });
-    setStress({ load: 40, mgmt: 30 });
-  };
+    .metrics-panel {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 8px 12px 10px;
+      background: rgba(15, 23, 42, 0.02);
+      border-top: 1px solid rgba(148, 163, 184, 0.4);
+    }
 
-  return (
-    <div className="min-h-screen bg-slate-100 p-4 font-sans text-slate-800">
-      
-      {/* Top Bar */}
-      <div className="max-w-7xl mx-auto flex items-center justify-between mb-6 bg-white p-4 rounded-xl shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-600 p-2 rounded-lg text-white">
-            <Dna size={24} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">VITALITY LAB</h1>
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-widest">Interactive Health Simulation</p>
-          </div>
+    .metric {
+      font-size: 11px;
+    }
+
+    .metric-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2px;
+    }
+
+    .metric-label span.score {
+      font-weight: 600;
+    }
+
+    .metric-bar {
+      position: relative;
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(148, 163, 184, 0.3);
+    }
+
+    .metric-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 8px;
+      border-radius: 999px;
+      transition: width 0.25s ease-out;
+    }
+
+    .metric-fill.energy {
+      background: #a3e635;
+    }
+
+    .metric-fill.mood {
+      background: #facc15;
+    }
+
+    .metric-fill.health {
+      background: #22c55e;
+    }
+
+    .footer-note {
+      font-size: 10px;
+      opacity: 0.8;
+      margin-top: 2px;
+      text-align: right;
+    }
+
+    .btn-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    button {
+      border-radius: 999px;
+      border: none;
+      padding: 5px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      background: #0ea5e9;
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.2);
+    }
+
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+      box-shadow: none;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        height: auto;
+      }
+
+      .app {
+        height: auto;
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        border-right: none;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+      }
+
+      .canvas-container {
+        height: 420px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div>
+        <h1>Healthy Habits Lab 🧪</h1>
+        <div class="subtitle">
+          Explore how <strong>sleep</strong>, <strong>stress</strong>,
+          <strong>diet</strong>, and <strong>exercise</strong> shape a body over time.
         </div>
-        <button onClick={reset} className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-full font-bold text-slate-600 text-sm transition-colors">
-          <RotateCcw size={16} /> Reset
-        </button>
+        <div class="pill">
+          <span>Interactive model</span> · <span>Not medical advice</span>
+        </div>
       </div>
 
-      <div className="max-w-7xl mx-auto grid grid-cols-12 gap-6 h-[calc(100vh-140px)]">
-        
-        {/* LEFT: Controls */}
-        <div className="col-span-12 md:col-span-3 overflow-y-auto pr-2 custom-scrollbar space-y-4">
-          
-          {/* Identity Control */}
-          <ControlPanel title="Subject Identity" icon={User} color="blue">
-            <div className="flex bg-slate-100 p-1 rounded-lg">
-              {['male', 'female'].map(g => (
-                <button 
-                  key={g}
-                  onClick={() => setGender(g)}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-md capitalize transition-all ${gender === g ? 'bg-white shadow text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
-                >
-                  {g}
-                </button>
-              ))}
-            </div>
-            <Slider label="Chronological Age" value={age} min={18} max={90} onChange={setAge} unit="yrs" />
-          </ControlPanel>
+      <div class="controls-group">
+        <h2>1. Person setup</h2>
+        <p>Choose age and see the avatars scale from child to older adult.</p>
 
-          {/* Sleep */}
-          <ControlPanel title="Sleep Hygiene" icon={Moon} color="indigo">
-            <Slider label="Nightly Duration" value={sleep} min={0} max={12} onChange={setSleep} unit="hrs" />
-          </ControlPanel>
-
-          {/* Diet */}
-          <ControlPanel title="Dietary Composition" icon={Utensils} color="green">
-            <Slider label="Vegetables & Fruits" value={diet.veg} min={0} max={10} onChange={v => setDiet({...diet, veg: v})} unit="" />
-            <Slider label="Lean Protein" value={diet.prot} min={0} max={10} onChange={v => setDiet({...diet, prot: v})} unit="" />
-            <Slider label="Processed/Sugar" value={diet.junk} min={0} max={10} onChange={v => setDiet({...diet, junk: v})} unit="" />
-          </ControlPanel>
-
-          {/* Exercise */}
-          <ControlPanel title="Activity Level" icon={Activity} color="orange">
-            <Slider label="Weekly Intensity" value={exercise.intensity} min={0} max={100} onChange={v => setExercise({...exercise, intensity: v})} unit="%" />
-          </ControlPanel>
-
-          {/* Stress */}
-          <ControlPanel title="Stress Factors" icon={Brain} color="purple">
-            <Slider label="External Load" value={stress.load} min={0} max={100} onChange={v => setStress({...stress, load: v})} unit="%" />
-            <Slider label="Active Management" value={stress.mgmt} min={0} max={100} onChange={v => setStress({...stress, mgmt: v})} unit="%" />
-          </ControlPanel>
-        </div>
-
-        {/* CENTER: The Stage (PhET Style) */}
-        <div className="col-span-12 md:col-span-6 flex flex-col">
-          <div className="flex-1 bg-white rounded-2xl shadow-lg border border-slate-200 relative overflow-hidden flex items-center justify-center p-8">
-            
-            {/* Background Decor (Grid/Floor) */}
-            <div className="absolute inset-0 opacity-5 pointer-events-none">
-              <div className="h-3/4 w-full bg-slate-200" style={{backgroundSize: '40px 40px', backgroundImage: 'linear-gradient(to right, #94a3b8 1px, transparent 1px), linear-gradient(to bottom, #94a3b8 1px, transparent 1px)'}}></div>
-              <div className="h-1/4 w-full bg-slate-300"></div>
-            </div>
-
-            {/* The Avatar */}
-            <div className="relative z-10 w-full max-w-sm h-full">
-              <Humanoid gender={gender} age={age} metrics={metrics} diet={diet} exercise={exercise} />
-            </div>
-
-            {/* Live Stats Overlay */}
-            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur p-4 rounded-xl border border-slate-200 shadow-sm text-right">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Biological Age</h3>
-              <div className={`text-3xl font-black ${metrics.biologicalAge > age ? 'text-red-500' : 'text-green-500'}`}>
-                {Math.round(metrics.biologicalAge)} <span className="text-sm text-slate-400 font-medium">yrs</span>
-              </div>
-            </div>
-
+        <div class="control">
+          <div class="control-label">
+            <span>Age</span>
+            <span class="value"><span id="ageValue">30</span> years</span>
           </div>
+          <input type="range" id="age" min="5" max="80" value="30" />
         </div>
 
-        {/* RIGHT: Data Output */}
-        <div className="col-span-12 md:col-span-3 space-y-4">
-          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-full flex flex-col">
-            <div className="flex items-center gap-2 mb-6 text-slate-700">
-              <Info size={20} />
-              <h2 className="font-bold uppercase text-sm tracking-wide">Real-time Analysis</h2>
-            </div>
-            
-            <div className="space-y-6 flex-1">
-              {/* Metric Bars */}
-              {[
-                { label: "Energy & Vitality", val: metrics.energy, icon: Battery, color: "yellow" },
-                { label: "Mood Balance", val: metrics.mood, icon: Smile, color: "purple" },
-                { label: "Immune Response", val: metrics.immunity, icon: Shield, color: "green" },
-                { label: "Heart Health", val: (metrics.eScore + metrics.dScore)/2, icon: Heart, color: "rose" }
-              ].map((m, i) => (
-                <div key={i}>
-                  <div className="flex justify-between items-center mb-1 text-sm font-semibold text-slate-600">
-                    <div className="flex items-center gap-2">
-                      <m.icon size={14} /> {m.label}
-                    </div>
-                    <span>{Math.round(m.val)}</span>
-                  </div>
-                  <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full bg-${m.color}-500 transition-all duration-700`}
-                      style={{ width: `${m.val}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-slate-100 bg-slate-50 -mx-5 -mb-5 p-5 rounded-b-xl">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Observations</h4>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                {metrics.biologicalAge > age + 5 && "⚠️ Your lifestyle is causing premature aging."}
-                {metrics.biologicalAge < age - 2 && "🌟 Excellent! You are biologically younger than your calendar age."}
-                {Math.abs(metrics.biologicalAge - age) <= 2 && "✅ Your health is consistent with your age."}
-              </p>
-            </div>
-          </div>
+        <div class="note">
+          You see <strong>two avatars</strong> in the scene: a male and a female,
+          both responding to the same lifestyle settings so students can focus on
+          habits rather than stereotypes.
         </div>
-
       </div>
 
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-      `}</style>
-    </div>
-  );
-}
+      <div class="controls-group">
+        <h2>2. Daily habits</h2>
+        <p>Adjust the main lifestyle factors. Try extreme values, then balance.</p>
+
+        <div class="control">
+          <div class="control-label">
+            <span>Sleep (hours / night)</span>
+            <span class="value"><span id="sleepValue">8</span> h</span>
+          </div>
+          <input type="range" id="sleep" min="0" max="12" value="8" />
+        </div>
+
+        <div class="control">
+          <div class="control-label">
+            <span>Stress level</span>
+            <span class="value">0 = calm · 10 = very stressed (<span id="stressValue">3</span>)</span>
+          </div>
+          <input type="range" id="stress" min="0" max="10" value="3" />
+        </div>
+
+        <div class="control">
+          <div class="control-label">
+            <span>Diet quality</span>
+            <span class="value">Harvard plate style: <span id="dietValue">7</span>/10</span>
+          </div>
+          <input type="range" id="diet" min="0" max="10" value="7" />
+        </div>
+
+        <div class="control">
+          <div class="control-label">
+            <span>Exercise</span>
+            <span class="value">0 = none · 10 = excessive (<span id="exerciseValue">6</span>)</span>
+          </div>
+          <input type="range" id="exercise" min="0" max="10" value="6" />
+        </div>
+      </div>
+
+      <div class="controls-group">
+        <h2>3. Teacher tools</h2>
+        <p>Use these presets during class to create “what if” scenarios.</p>
+
+        <div class="btn-row">
+          <button type="button" id="presetBalanced">Balanced day</button>
+          <button type="button" class="secondary" id="presetExams">
+            Exam week
+          </button>
+        </div>
+
+        <div class="note">
+          Encourage students to explain <strong>why</strong> the avatar changes.
+          They can connect each slider with systems: heart, brain, immune system, etc.
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="top-bar">
+        <div class="top-bar-left">
+          <div class="top-bar-title">Body response visualiser</div>
+          <div class="top-bar-subtitle">
+            Avatars show body shape, posture and “glow” as a simplified proxy for long-term health.
+          </div>
+        </div>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot energy"></div>
+            <span>Energy</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot mood"></div>
+            <span>Mood / focus</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot health"></div>
+            <span>Long-term health</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="canvas-container">
+        <canvas id="avatarCanvas" width="800" height="360"></canvas>
+        <div class="metrics-panel">
+          <div class="metric">
+            <div class="metric-label">
+              <span>Energy today</span>
+              <span class="score" id="energyScoreLabel">–</span>
+            </div>
+            <div class="metric-bar">
+              <div class="metric-fill energy" id="energyBar"></div>
+            </div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">
+              <span>Mood & focus</span>
+              <span class="score" id="moodScoreLabel">–</span>
+            </div>
+            <div class="metric-bar">
+              <div class="metric-fill mood" id="moodBar"></div>
+            </div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">
+              <span>Long-term health</span>
+              <span class="score" id="healthScoreLabel">–</span>
+            </div>
+            <div class="metric-bar">
+              <div class="metric-fill health" id="healthBar"></div>
+            </div>
+          </div>
+        </div>
+        <div class="footer-note">
+          Model is simplified for learning. Real human health is more complex and individual.
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const ageInput = document.getElementById('age');
+    const sleepInput = document.getElementById('sleep');
+    const stressInput = document.getElementById('stress');
+    const dietInput = document.getElementById('diet');
+    const exerciseInput = document.getElementById('exercise');
+
+    const ageValue = document.getElementById('ageValue');
+    const sleepValue = document.getElementById('sleepValue');
+    const stressValue = document.getElementById('stressValue');
+    const dietValue = document.getElementById('dietValue');
+    const exerciseValue = document.getElementById('exerciseValue');
+
+    const avatarCanvas = document.getElementById('avatarCanvas');
+    const ctx = avatarCanvas.getContext('2d');
+
+    const energyBar = document.getElementById('energyBar');
+    const moodBar = document.getElementById('moodBar');
+    const healthBar = document.getElementById('healthBar');
+
+    const energyScoreLabel = document.getElementById('energyScoreLabel');
+    const moodScoreLabel = document.getElementById('moodScoreLabel');
+    const healthScoreLabel = document.getElementById('healthScoreLabel');
+
+    const presetBalanced = document.getElementById('presetBalanced');
+    const presetExams = document.getElementById('presetExams');
+
+    function clamp(v, min, max) {
+      return Math.min(max, Math.max(min, v));
+    }
+
+    // Core model: combine lifestyle into simplified scores (0–1)
+    function computeScores() {
+      const age = parseInt(ageInput.value, 10);
+      const sleep = parseFloat(sleepInput.value);
+      const stress = parseFloat(stressInput.value);
+      const diet = parseFloat(dietInput.value);
+      const exercise = parseFloat(exerciseInput.value);
+
+      const sleepFactor = Math.max(0, 1 - Math.abs(sleep - 8) / 4); // best 7–9 h
+      const stressFactor = 1 - stress / 10; // lower is better
+      const dietFactor = diet / 10; // Harvard-style plate = high
+      const exerciseFactor = Math.max(
+        0,
+        1 - Math.abs(exercise - 6) / 6 // moderate best
+      );
+
+      const baseHealth =
+        (sleepFactor + stressFactor + dietFactor + exerciseFactor) / 4;
+
+      const ageFactor =
+        age <= 40
+          ? 1
+          : Math.max(0.5, 1 - (age - 40) / 80); // gentle decline, never below 0.5
+
+      const longTermHealth = clamp(baseHealth * ageFactor, 0, 1);
+
+      // Energy is very sensitive to sleep & stress
+      const energy = clamp(
+        0.15 +
+          0.45 * sleepFactor +
+          0.35 * stressFactor +
+          0.05 * exerciseFactor,
+        0,
+        1
+      );
+
+      // Mood/focus sensitive to stress, sleep, and diet
+      const mood = clamp(
+        0.1 +
+          0.4 * stressFactor +
+          0.25 * sleepFactor +
+          0.25 * dietFactor,
+        0,
+        1
+      );
+
+      return {
+        energy,
+        mood,
+        longTermHealth,
+        sleepFactor,
+        stressFactor,
+        dietFactor,
+        exerciseFactor,
+        age,
+      };
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function lerpColor(c1, c2, t) {
+      return {
+        r: Math.round(lerp(c1.r, c2.r, t)),
+        g: Math.round(lerp(c1.g, c2.g, t)),
+        b: Math.round(lerp(c1.b, c2.b, t)),
+      };
+    }
+
+    function rgbToString(c, alpha = 1) {
+      return `rgba(${c.r}, ${c.g}, ${c.b}, ${alpha})`;
+    }
+
+    // Draw a simple humanoid avatar
+    function drawCharacter(xCenter, sex, scores) {
+      const { longTermHealth, energy, mood, age } = scores;
+
+      const scale = 0.6 + (age / 80) * 0.6; // children smaller, adults taller
+      const baseHeight = 140 * scale;
+      const baseWidth = 40 * scale;
+
+      const weightFactor = 1.2 - longTermHealth * 0.4; // less healthy = wider
+      const torsoWidth = baseWidth * weightFactor;
+      const torsoHeight = baseHeight * 0.45;
+      const legHeight = baseHeight * 0.4;
+      const headRadius = 16 * scale;
+
+      const baselineY = avatarCanvas.height - 30;
+
+      const healthyBodyColor = { r: 180, g: 230, b: 180 };
+      const unhealthyBodyColor = { r: 200, g: 200, b: 200 };
+      const bodyColor = lerpColor(
+        unhealthyBodyColor,
+        healthyBodyColor,
+        longTermHealth
+      );
+
+      const healthyFaceColor = { r: 255, g: 223, b: 185 };
+      const tiredFaceColor = { r: 220, g: 205, b: 190 };
+      const faceColor = lerpColor(tiredFaceColor, healthyFaceColor, energy);
+
+      const shirtColorMale = { r: 59, g: 130, b: 246 };
+      const shirtColorFemale = { r: 236, g: 72, b: 153 };
+      const shirtBaseColor = sex === 'male' ? shirtColorMale : shirtColorFemale;
+      const shirtColor = lerpColor(
+        { r: 148, g: 163, b: 184 },
+        shirtBaseColor,
+        longTermHealth
+      );
+
+      const pantsColor = { r: 30, g: 64, b: 175 };
+
+      // Subtle "glow" for good health
+      if (longTermHealth > 0.6) {
+        ctx.save();
+        ctx.shadowColor = rgbToString({ r: 74, g: 222, b: 128 }, 0.5);
+        ctx.shadowBlur = 18 * longTermHealth;
+      }
+
+      const torsoTopY = baselineY - legHeight - torsoHeight;
+      const torsoLeftX = xCenter - torsoWidth / 2;
+
+      ctx.fillStyle = rgbToString(bodyColor);
+      ctx.beginPath();
+      ctx.roundRect(
+        torsoLeftX,
+        torsoTopY,
+        torsoWidth,
+        torsoHeight,
+        10 * scale
+      );
+      ctx.fill();
+
+      // Shirt overlay
+      ctx.fillStyle = rgbToString(shirtColor);
+      ctx.beginPath();
+      ctx.roundRect(
+        torsoLeftX,
+        torsoTopY + torsoHeight * 0.18,
+        torsoWidth,
+        torsoHeight * 0.75,
+        10 * scale
+      );
+      ctx.fill();
+
+      // Legs
+      const legWidth = torsoWidth * 0.35;
+      const legGap = torsoWidth * 0.05;
+      ctx.fillStyle = rgbToString(pantsColor);
+
+      ctx.beginPath();
+      ctx.roundRect(
+        xCenter - legGap / 2 - legWidth,
+        baselineY - legHeight,
+        legWidth,
+        legHeight,
+        8 * scale
+      );
+      ctx.roundRect(
+        xCenter + legGap / 2,
+        baselineY - legHeight,
+        legWidth,
+        legHeight,
+        8 * scale
+      );
+      ctx.fill();
+
+      // Feet
+      ctx.fillStyle = '#111827';
+      const footHeight = 8 * scale;
+      ctx.beginPath();
+      ctx.roundRect(
+        xCenter - legGap / 2 - legWidth,
+        baselineY - footHeight,
+        legWidth,
+        footHeight,
+        4 * scale
+      );
+      ctx.roundRect(
+        xCenter + legGap / 2,
+        baselineY - footHeight,
+        legWidth,
+        footHeight,
+        4 * scale
+      );
+      ctx.fill();
+
+      // Arms
+      ctx.strokeStyle = rgbToString(bodyColor);
+      ctx.lineWidth = 8 * scale;
+      ctx.lineCap = 'round';
+
+      ctx.beginPath();
+      ctx.moveTo(torsoLeftX, torsoTopY + 20 * scale);
+      ctx.lineTo(
+        torsoLeftX - 22 * scale,
+        torsoTopY + torsoHeight * (0.6 + (1 - energy) * 0.1)
+      );
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(torsoLeftX + torsoWidth, torsoTopY + 20 * scale);
+      ctx.lineTo(
+        torsoLeftX + torsoWidth + 22 * scale,
+        torsoTopY + torsoHeight * (0.6 + (1 - energy) * 0.1)
+      );
+      ctx.stroke();
+
+      // Head
+      const headCenterY = torsoTopY - headRadius - 6 * scale;
+
+      ctx.fillStyle = rgbToString(faceColor);
+      ctx.beginPath();
+      ctx.arc(xCenter, headCenterY, headRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Hair
+      ctx.fillStyle = sex === 'male' ? '#0f172a' : '#7c2d12';
+      ctx.beginPath();
+      ctx.arc(
+        xCenter,
+        headCenterY - 4 * scale,
+        headRadius,
+        Math.PI,
+        2 * Math.PI
+      );
+      ctx.fill();
+
+      if (sex === 'female') {
+        ctx.beginPath();
+        ctx.moveTo(xCenter - headRadius, headCenterY);
+        ctx.quadraticCurveTo(
+          xCenter - headRadius * 1.1,
+          headCenterY + headRadius * 1.5,
+          xCenter - headRadius * 0.5,
+          headCenterY + headRadius * 1.4
+        );
+        ctx.moveTo(xCenter + headRadius, headCenterY);
+        ctx.quadraticCurveTo(
+          xCenter + headRadius * 1.1,
+          headCenterY + headRadius * 1.5,
+          xCenter + headRadius * 0.5,
+          headCenterY + headRadius * 1.4
+        );
+        ctx.strokeStyle = ctx.fillStyle;
+        ctx.lineWidth = 6 * scale;
+        ctx.stroke();
+      }
+
+      // Face details
+      const eyeOffsetX = 7 * scale;
+      const eyeOffsetY = 2 * scale;
+      const eyeOpen = 2.4 + 1.8 * energy; // more open with more energy
+
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.ellipse(
+        xCenter - eyeOffsetX,
+        headCenterY - eyeOffsetY,
+        2.1 * scale,
+        eyeOpen,
+        0,
+        0,
+        Math.PI * 2
+      );
+      ctx.ellipse(
+        xCenter + eyeOffsetX,
+        headCenterY - eyeOffsetY,
+        2.1 * scale,
+        eyeOpen,
+        0,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+
+      const mouthWidth = 10 * scale;
+      const moodShift = (mood - 0.5) * 8 * scale; // smile vs frown
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 1.4 * scale;
+      ctx.beginPath();
+      ctx.arc(
+        xCenter,
+        headCenterY + 6 * scale + moodShift,
+        mouthWidth / 2,
+        0,
+        Math.PI
+      );
+      ctx.stroke();
+
+      if (longTermHealth > 0.6) {
+        ctx.restore();
+      }
+
+      // Name label
+      ctx.font = `${11 * scale}px system-ui`;
+      ctx.fillStyle = 'rgba(15,23,42,0.8)';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        sex === 'male' ? 'Male avatar' : 'Female avatar',
+        xCenter,
+        baselineY + 16
+      );
+    }
+
+    function updateMetrics(scores) {
+      const { energy, mood, longTermHealth } = scores;
+
+      const energyPct = Math.round(energy * 100);
+      const moodPct = Math.round(mood * 100);
+      const healthPct = Math.round(longTermHealth * 100);
+
+      energyBar.style.width = `${energyPct}%`;
+      moodBar.style.width = `${moodPct}%`;
+      healthBar.style.width = `${healthPct}%`;
+
+      energyScoreLabel.textContent = `${energyPct}/100`;
+      moodScoreLabel.textContent = `${moodPct}/100`;
+      healthScoreLabel.textContent = `${healthPct}/100`;
+    }
+
+    function render() {
+      ageValue.textContent = ageInput.value;
+      sleepValue.textContent = sleepInput.value;
+      stressValue.textContent = stressInput.value;
+      dietValue.textContent = dietInput.value;
+      exerciseValue.textContent = exerciseInput.value;
+
+      const scores = computeScores();
+
+      ctx.clearRect(0, 0, avatarCanvas.width, avatarCanvas.height);
+
+      // Ground
+      ctx.fillStyle = '#e5e7eb';
+      ctx.beginPath();
+      ctx.rect(0, avatarCanvas.height - 28, avatarCanvas.width, 28);
+      ctx.fill();
+
+      // Background hint (like a playground / park)
+      ctx.fillStyle = '#dbeafe';
+      ctx.beginPath();
+      ctx.arc(
+        avatarCanvas.width / 2,
+        avatarCanvas.height,
+        260,
+        Math.PI,
+        Math.PI * 2
+      );
+      ctx.fill();
+
+      // Draw avatars (male left, female right)
+      drawCharacter(avatarCanvas.width * 0.32, 'male', scores);
+      drawCharacter(avatarCanvas.width * 0.68, 'female', scores);
+
+      updateMetrics(scores);
+    }
+
+    [ageInput, sleepInput, stressInput, dietInput, exerciseInput].forEach(
+      (input) => {
+        input.addEventListener('input', render);
+      }
+    );
+
+    presetBalanced.addEventListener('click', () => {
+      ageInput.value = 30;
+      sleepInput.value = 8;
+      stressInput.value = 3;
+      dietInput.value = 8;
+      exerciseInput.value = 6;
+      render();
+    });
+
+    presetExams.addEventListener('click', () => {
+      sleepInput.value = 5;
+      stressInput.value = 8;
+      dietInput.value = 4;
+      exerciseInput.value = 2;
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
