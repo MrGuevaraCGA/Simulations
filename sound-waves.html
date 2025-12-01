@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sound Waves Explorer – Pixel Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #020617;
+      --bg-alt: #030712;
+      --panel: #020617;
+      --panel-soft: #0f172a;
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.18);
+      --accent-2: #38bdf8;
+      --accent-3: #a855f7;
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --danger: #f97316;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, #111827 0%, #020617 40%) fixed,
+        radial-gradient(circle at bottom right, #0b1120 0%, #020617 45%) fixed;
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .shell {
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    header h1 {
+      font-size: clamp(2rem, 3vw, 2.5rem);
+      text-shadow: 0 3px 0 #000;
+      letter-spacing: 0.04em;
+    }
+
+    header p {
+      margin-top: 4px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .tagline {
+      margin-top: 6px;
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.7);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent-2);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: 18px;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .panel {
+      position: relative;
+      background:
+        repeating-linear-gradient(
+          45deg,
+          #020617,
+          #020617 4px,
+          #030712 4px,
+          #030712 8px
+        );
+      border-radius: 18px;
+      padding: 16px 16px 14px;
+      border: 2px solid #020617;
+      box-shadow:
+        0 0 0 2px #020617,
+        0 12px 30px rgba(15, 23, 42, 0.9);
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 2px solid rgba(15, 23, 42, 0.9);
+      pointer-events: none;
+    }
+
+    h2 {
+      font-size: 1.1rem;
+      margin-bottom: 6px;
+    }
+
+    .panel p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    /* Instrument grid */
+
+    .instrument-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 700px) {
+      .instrument-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .instrument {
+      position: relative;
+      padding: 10px 6px;
+      background: linear-gradient(135deg, #020617, #0f172a);
+      border-radius: 12px;
+      border: 2px solid #020617;
+      box-shadow: 0 4px 0 #020617;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      transition: transform 0.12s ease, box-shadow 0.12s ease,
+        border-color 0.12s ease, background 0.12s ease;
+    }
+
+    .instrument:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 #020617, 0 10px 20px rgba(15, 23, 42, 0.9);
+      border-color: rgba(148, 163, 184, 0.7);
+    }
+
+    .instrument.active {
+      background: linear-gradient(135deg, #0f172a, #047857);
+      border-color: var(--accent);
+      box-shadow:
+        0 0 0 2px rgba(34, 197, 94, 0.6),
+        0 10px 0 #020617,
+        0 18px 32px rgba(16, 185, 129, 0.7);
+    }
+
+    .instrument-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .pixel-icon {
+      width: 40px;
+      height: 40px;
+      image-rendering: pixelated;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      gap: 1px;
+    }
+
+    .pixel {
+      border-radius: 2px;
+      background: #020617;
+    }
+
+    .pixel--gold {
+      background: #facc15;
+    }
+
+    .pixel--wood {
+      background: #b45309;
+    }
+
+    .pixel--string {
+      background: #e5e7eb;
+    }
+
+    .pixel--brass {
+      background: #fbbf24;
+    }
+
+    .pixel--key {
+      background: #e5e7eb;
+    }
+
+    .pixel--key-dark {
+      background: #0f172a;
+    }
+
+    .pixel--body {
+      background: #22c55e;
+    }
+
+    .pixel--sound {
+      background: #38bdf8;
+    }
+
+    .pixel-shadow {
+      box-shadow: 0 0 0 1px #020617;
+    }
+
+    /* Controls */
+
+    .controls {
+      background: rgba(15, 23, 42, 0.98);
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      padding: 10px 12px 10px;
+      margin-bottom: 10px;
+    }
+
+    .controls-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    @media (max-width: 700px) {
+      .controls-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    .mini-legend {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .button-row {
+      margin-top: 6px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border-radius: 999px;
+      border: 0;
+      padding: 7px 13px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      transition: background 0.12s ease, transform 0.08s ease,
+        box-shadow 0.12s ease;
+    }
+
+    .btn-main {
+      background: var(--accent);
+      color: #052e16;
+      box-shadow: 0 4px 0 #166534, 0 8px 16px rgba(22, 163, 74, 0.7);
+    }
+
+    .btn-main:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 0 #166534, 0 10px 22px rgba(22, 163, 74, 0.85);
+    }
+
+    .btn-secondary {
+      background: #020617;
+      color: var(--text-muted);
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      box-shadow: 0 3px 0 #020617;
+    }
+
+    .btn-secondary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 0 #020617, 0 8px 16px rgba(15, 23, 42, 0.7);
+    }
+
+    .status {
+      margin-top: 4px;
+      font-size: 0.78rem;
+      color: var(--danger);
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.78rem;
+      margin-top: 4px;
+      color: var(--text-muted);
+    }
+
+    .summary-row span strong {
+      color: var(--accent-2);
+    }
+
+    /* Canvases */
+
+    .canvas-wrapper {
+      margin-top: 6px;
+      background: #020617;
+      border-radius: 14px;
+      border: 2px solid #020617;
+      box-shadow:
+        0 0 0 1px #020617,
+        inset 0 0 0 1px #0f172a;
+      padding: 8px;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 8px;
+      min-height: 260px;
+    }
+
+    .canvas-panel {
+      position: relative;
+      background: radial-gradient(circle at top, #020617 0%, #000 70%);
+      border-radius: 10px;
+      border: 1px solid rgba(51, 65, 85, 0.9);
+      overflow: hidden;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    .canvas-label {
+      position: absolute;
+      top: 4px;
+      left: 6px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      background: rgba(15, 23, 42, 0.8);
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+    }
+
+    .canvas-legend {
+      position: absolute;
+      right: 6px;
+      bottom: 4px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      background: rgba(15, 23, 42, 0.8);
+      padding: 2px 6px;
+      border-radius: 6px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+    }
+
+    /* Right-hand tasks / explanations */
+
+    .info-box {
+      background: rgba(15, 23, 42, 0.98);
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      padding: 10px 12px 10px;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
+    .info-box strong {
+      color: var(--accent);
+    }
+
+    .quest-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--accent-3);
+      margin-bottom: 4px;
+    }
+
+    .task-list {
+      margin-top: 4px;
+      padding-left: 16px;
+      font-size: 0.86rem;
+      color: var(--text-muted);
+    }
+
+    .task-list li + li {
+      margin-top: 4px;
+    }
+
+    .kbd {
+      padding: 1px 5px;
+      border-radius: 4px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      font-size: 0.78rem;
+      background: rgba(15, 23, 42, 0.7);
+    }
+
+    .note {
+      margin-top: 6px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    footer {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <h1>Sound Waves Explorer</h1>
+      <p>Create sounds with different instruments, then watch the waves change shape like a blocky science videogame.</p>
+      <div class="tagline">Best with headphones · Ages 11–15</div>
+    </header>
+
+    <main class="layout">
+      <!-- LEFT: instruments + canvases -->
+      <section class="panel">
+        <h2>1. Choose your instrument</h2>
+        <p>Click a blocky instrument, then press <strong>Play</strong>. The shape of the wave shows the instrument’s “voice”.</p>
+
+        <div class="instrument-grid" id="instrumentGrid">
+          <!-- Piano -->
+          <div class="instrument active" data-instrument="piano">
+            <div class="pixel-icon">
+              <!-- quick 8x8 piano sprite -->
+              <!-- row 1 -->
+              <div class="pixel pixel--key-dark"></div>
+              <div class="pixel pixel--key-dark"></div>
+              <div class="pixel pixel--key-dark"></div>
+              <div class="pixel pixel--key-dark"></div>
+              <div class="pixel pixel--key-dark"></div>
+              <div class="pixel pixel--key-dark"></div>
+              <div class="pixel pixel--key-dark"></div>
+              <div class="pixel pixel--key-dark"></div>
+              <!-- row 2 -->
+              <div class="pixel pixel--key"></div>
+              <div class="pixel pixel--key"></div>
+              <div class="pixel pixel--key"></div>
+              <div class="pixel pixel--key"></div>
+              <div class="pixel pixel--key"></div>
+              <div class="pixel pixel--key"></div>
+              <div class="pixel pixel--key"></div>
+              <div class="pixel pixel--key"></div>
+              <!-- row 3 -->
+              <div class="pixel pixel--key-dark"></div>
+              <div class="pixel pixel--key-dark"></div>
+              <div class="pixel pixel--key-dark"></div>
+              <div class="pixel pixel--key-dark"></div>
+              <div class="pixel pixel--key-dark"></div>
+              <div class="pixel pixel--key-dark"></div>
+              <div class="pixel pixel--key-dark"></div>
+              <div class="pixel pixel--key-dark"></div>
+              <!-- row 4–8 (body) -->
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+
+              <div class="pixel pixel--wood"></div>
+              <div class="pixel pixel--wood"></div>
+              <div class="pixel pixel--wood"></div>
+              <div class="pixel pixel--wood"></div>
+              <div class="pixel pixel--wood"></div>
+              <div class="pixel pixel--wood"></div>
+              <div class="pixel pixel--wood"></div>
+              <div class="pixel pixel--wood"></div>
+
+              <div class="pixel pixel--wood pixel-shadow"></div>
+              <div class="pixel pixel--wood pixel-shadow"></div>
+              <div class="pixel pixel--wood pixel-shadow"></div>
+              <div class="pixel pixel--wood pixel-shadow"></div>
+              <div class="pixel pixel--wood pixel-shadow"></div>
+              <div class="pixel pixel--wood pixel-shadow"></div>
+              <div class="pixel pixel--wood pixel-shadow"></div>
+              <div class="pixel pixel--wood pixel-shadow"></div>
+            </div>
+            <span class="instrument-label">Piano</span>
+          </div>
+
+          <!-- Guitar -->
+          <div class="instrument" data-instrument="guitar">
+            <div class="pixel-icon">
+              <!-- simple guitar sprite -->
+              <div class="pixel"></div><div class="pixel"></div>
+              <div class="pixel pixel--wood"></div><div class="pixel pixel--wood"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel"></div><div class="pixel pixel--wood"></div>
+              <div class="pixel pixel--wood"></div><div class="pixel pixel--wood"></div>
+              <div class="pixel pixel--wood"></div><div class="pixel"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel"></div><div class="pixel pixel--wood"></div>
+              <div class="pixel pixel--wood"></div><div class="pixel pixel--wood"></div>
+              <div class="pixel pixel--wood"></div><div class="pixel"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel pixel--wood"></div><div class="pixel pixel--wood"></div>
+              <div class="pixel pixel--body"></div><div class="pixel pixel--body"></div>
+              <div class="pixel pixel--wood"></div><div class="pixel pixel--wood"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel pixel--wood"></div><div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div><div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div><div class="pixel pixel--wood"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel"></div><div class="pixel pixel--string"></div>
+              <div class="pixel pixel--string"></div><div class="pixel pixel--string"></div>
+              <div class="pixel pixel--string"></div><div class="pixel"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel"></div><div class="pixel pixel--string"></div>
+              <div class="pixel pixel--string"></div><div class="pixel pixel--string"></div>
+              <div class="pixel pixel--string"></div><div class="pixel"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel"></div><div class="pixel"></div>
+              <div class="pixel pixel--string pixel-shadow"></div>
+              <div class="pixel pixel--string pixel-shadow"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+            </div>
+            <span class="instrument-label">Guitar</span>
+          </div>
+
+          <!-- Trumpet -->
+          <div class="instrument" data-instrument="trumpet">
+            <div class="pixel-icon">
+              <div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel"></div><div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div><div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div><div class="pixel pixel--gold"></div>
+              <div class="pixel pixel--gold"></div><div class="pixel pixel--gold"></div>
+
+              <div class="pixel"></div><div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div><div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div><div class="pixel pixel--gold"></div>
+              <div class="pixel pixel--gold"></div><div class="pixel pixel--gold"></div>
+
+              <div class="pixel"></div><div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div><div class="pixel pixel--brass"></div>
+              <div class="pixel pixel--brass"></div><div class="pixel"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel"></div><div class="pixel pixel--sound"></div>
+              <div class="pixel pixel--sound"></div><div class="pixel pixel--sound"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel"></div><div class="pixel pixel--sound pixel-shadow"></div>
+              <div class="pixel pixel--sound pixel-shadow"></div>
+              <div class="pixel pixel--sound pixel-shadow"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+            </div>
+            <span class="instrument-label">Trumpet</span>
+          </div>
+
+          <!-- Ukulele -->
+          <div class="instrument" data-instrument="ukulele">
+            <div class="pixel-icon">
+              <div class="pixel"></div><div class="pixel"></div>
+              <div class="pixel pixel--wood"></div><div class="pixel pixel--wood"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel"></div><div class="pixel pixel--wood"></div>
+              <div class="pixel pixel--wood"></div><div class="pixel pixel--wood"></div>
+              <div class="pixel pixel--wood"></div><div class="pixel"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel pixel--wood"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--wood"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel pixel--wood"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--body"></div>
+              <div class="pixel pixel--wood"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel"></div><div class="pixel pixel--string"></div>
+              <div class="pixel pixel--string"></div><div class="pixel pixel--string"></div>
+              <div class="pixel pixel--string"></div><div class="pixel"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel"></div><div class="pixel pixel--string"></div>
+              <div class="pixel pixel--string"></div><div class="pixel pixel--string"></div>
+              <div class="pixel pixel--string"></div><div class="pixel"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+
+              <div class="pixel"></div><div class="pixel"></div>
+              <div class="pixel pixel--string pixel-shadow"></div>
+              <div class="pixel pixel--string pixel-shadow"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+              <div class="pixel"></div><div class="pixel"></div>
+            </div>
+            <span class="instrument-label">Ukulele</span>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="controls-row">
+            <div>
+              <label for="pitchRange">
+                Pitch (note)
+                <span><span id="pitchLabel">Middle</span> · ~<span id="freqLabel">440</span> Hz</span>
+              </label>
+              <input id="pitchRange" type="range" min="0" max="2" step="1" value="1" />
+              <div class="mini-legend">
+                <span>Low (bass)</span>
+                <span>High (treble)</span>
+              </div>
+            </div>
+            <div>
+              <label for="volumeRange">
+                Volume (amplitude)
+                <span><span id="volLabel">70</span>%</span>
+              </label>
+              <input id="volumeRange" type="range" min="10" max="100" value="70" />
+              <div class="mini-legend">
+                <span>Quiet ripples</span>
+                <span>Loud spikes</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button class="btn-main" id="playBtn" type="button">Play</button>
+            <button class="btn-secondary" id="stopBtn" type="button">Stop</button>
+            <button class="btn-secondary" id="missionBtn" type="button">Random challenge</button>
+          </div>
+
+          <div class="summary-row">
+            <span>Instrument: <strong id="instrumentLabel">Piano (smooth sine wave)</strong></span>
+            <span>Wave type: <strong id="waveLabel">Soft, rounded peaks</strong></span>
+          </div>
+
+          <div class="status" id="statusMsg"></div>
+        </div>
+
+        <div class="canvas-wrapper">
+          <div class="canvas-panel">
+            <div class="canvas-label">Minecraft-style oscilloscope</div>
+            <div class="canvas-legend">Up/down = air pressure · Left = time</div>
+            <canvas id="oscilloscope"></canvas>
+          </div>
+          <div class="canvas-panel">
+            <div class="canvas-label">Wavefront blocks</div>
+            <div class="canvas-legend">Bright = compression · Dark = rarefaction</div>
+            <canvas id="blocks"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: explanation + quests -->
+      <section class="panel">
+        <div class="info-box" id="infoBox">
+          <div class="quest-title">Lab Guide</div>
+          <p><strong>Step 1:</strong> Pick an instrument. Each one uses a different waveform.</p>
+          <p><strong>Step 2:</strong> Change pitch and volume. Watch how:</p>
+          <ul class="task-list">
+            <li>Higher pitch = more “waves” fit on the screen.</li>
+            <li>Louder sound = taller blocks and peaks.</li>
+          </ul>
+          <p class="note">
+            If the simulation is silent the first time, click <span class="kbd">Play</span> again – browsers often need you to interact once before audio starts.
+          </p>
+        </div>
+
+        <div class="info-box">
+          <div class="quest-title">Missions (like a mini-game)</div>
+          <ul class="task-list" id="missions">
+            <li>1. Match the wave: Make <strong>Piano</strong> and <strong>Ukulele</strong> play the same pitch. Compare the shapes.</li>
+            <li>2. Stealth vs. Alarm: Find a super quiet sound that still shows a clear pattern. Then make the loudest “alarm” wave you can.</li>
+            <li>3. Bass vs. Treble: With the same instrument, switch between low and high pitch. Describe how the block pattern changes.</li>
+          </ul>
+          <p class="note">
+            Teachers: ask students to take a screenshot of a wave and annotate <strong>wavelength</strong> and <strong>amplitude</strong>.
+          </p>
+        </div>
+
+        <div class="info-box">
+          <div class="quest-title">Key Ideas</div>
+          <ul class="task-list">
+            <li><strong>Pitch</strong> is how fast the wave vibrates (frequency in Hz).</li>
+            <li><strong>Amplitude</strong> is how tall the wave is (volume / loudness).</li>
+            <li><strong>Timbre</strong> is the “shape” of the wave – it’s what lets us tell guitar from trumpet even at the same pitch.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer>Sound Waves Explorer · Built with HTML, CSS, Canvas and the Web Audio API.</footer>
+  </div>
+
+  <script>
+    // ==== Instrument & UI state ====
+    const instruments = {
+      piano: {
+        label: "Piano (smooth sine wave)",
+        oscType: "sine",
+        waveDescription: "Soft, rounded peaks",
+        envelope: { attack: 0.02, decay: 0.4 }
+      },
+      guitar: {
+        label: "Guitar (plucked triangle)",
+        oscType: "triangle",
+        waveDescription: "Sharper, pointy peaks",
+        envelope: { attack: 0.01, decay: 0.7 }
+      },
+      trumpet: {
+        label: "Trumpet (bright sawtooth)",
+        oscType: "sawtooth",
+        waveDescription: "Steep ramps with strong overtones",
+        envelope: { attack: 0.03, decay: 0.6 }
+      },
+      ukulele: {
+        label: "Ukulele (square + soft)",
+        oscType: "square",
+        waveDescription: "Blocky steps with gentle decay",
+        envelope: { attack: 0.01, decay: 0.5 }
+      }
+    };
+
+    const instrumentGrid = document.getElementById("instrumentGrid");
+    const instrumentLabel = document.getElementById("instrumentLabel");
+    const waveLabel = document.getElementById("waveLabel");
+    const statusMsg = document.getElementById("statusMsg");
+    const infoBox = document.getElementById("infoBox");
+
+    let currentInstrumentKey = "piano";
+
+    instrumentGrid.addEventListener("click", (e) => {
+      const card = e.target.closest(".instrument");
+      if (!card) return;
+
+      instrumentGrid.querySelectorAll(".instrument").forEach((el) =>
+        el.classList.remove("active")
+      );
+      card.classList.add("active");
+      currentInstrumentKey = card.dataset.instrument;
+
+      const instrument = instruments[currentInstrumentKey];
+      instrumentLabel.textContent = instrument.label;
+      waveLabel.textContent = instrument.waveDescription;
+
+      infoBox.innerHTML =
+        '<div class="quest-title">Instrument info</div>' +
+        `<p><strong>${instrument.label.split("(")[0].trim()}:</strong> This instrument uses a <strong>${instrument.oscType}</strong> waveform.</p>` +
+        "<p>Watch how the <strong>shape</strong> of the wave changes when you switch instruments, even if the pitch is the same.</p>";
+    });
+
+    // ==== Pitch & volume ====
+    const pitchRange = document.getElementById("pitchRange");
+    const volumeRange = document.getElementById("volumeRange");
+    const pitchLabel = document.getElementById("pitchLabel");
+    const freqLabel = document.getElementById("freqLabel");
+    const volLabel = document.getElementById("volLabel");
+
+    // Three "notes" (Hz) – roughly low, mid, high
+    const pitchFrequencies = [196, 440, 880]; // G3, A4, A5
+
+    function updatePitchLabel() {
+      const idx = Number(pitchRange.value);
+      const names = ["Low", "Middle", "High"];
+      pitchLabel.textContent = names[idx];
+      freqLabel.textContent = pitchFrequencies[idx];
+    }
+
+    function updateVolumeLabel() {
+      volLabel.textContent = volumeRange.value;
+    }
+
+    pitchRange.addEventListener("input", updatePitchLabel);
+    volumeRange.addEventListener("input", () => {
+      updateVolumeLabel();
+      if (masterGain) {
+        masterGain.gain.value = volumeRange.value / 100;
+      }
+    });
+
+    updatePitchLabel();
+    updateVolumeLabel();
+
+    // ==== Audio setup ====
+    let audioCtx = null;
+    let masterGain = null;
+    let currentOsc = null;
+    let currentGain = null;
+    let stopTimeout = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AC();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = volumeRange.value / 100;
+        masterGain.connect(audioCtx.destination);
+      }
+    }
+
+    function stopSound() {
+      if (stopTimeout) {
+        clearTimeout(stopTimeout);
+        stopTimeout = null;
+      }
+      if (currentGain) {
+        try {
+          const now = audioCtx.currentTime;
+          currentGain.gain.cancelScheduledValues(now);
+          currentGain.gain.setTargetAtTime(0, now, 0.05);
+        } catch (e) {}
+      }
+      if (currentOsc) {
+        try {
+          currentOsc.stop(audioCtx.currentTime + 0.2);
+        } catch (e) {}
+      }
+      currentOsc = null;
+      currentGain = null;
+      statusMsg.textContent = "";
+    }
+
+    function playSound() {
+      initAudio();
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+      stopSound();
+
+      const instrument = instruments[currentInstrumentKey];
+      const freq = pitchFrequencies[Number(pitchRange.value)];
+      const vol = Number(volumeRange.value) / 100;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = instrument.oscType;
+      osc.frequency.value = freq;
+
+      gain.gain.value = 0;
+      osc.connect(gain).connect(masterGain);
+
+      const now = audioCtx.currentTime;
+      const attack = instrument.envelope.attack;
+      const decay = instrument.envelope.decay;
+
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(vol, now + attack);
+      gain.gain.exponentialRampToValueAtTime(Math.max(vol * 0.1, 0.02), now + attack + decay);
+
+      osc.start(now);
+      stopTimeout = setTimeout(stopSound, (attack + decay + 0.8) * 1000);
+
+      currentOsc = osc;
+      currentGain = gain;
+      statusMsg.textContent =
+        "Playing… Watch how the blocks and wave shape respond to pitch, volume and instrument.";
+    }
+
+    document.getElementById("playBtn").addEventListener("click", playSound);
+    document.getElementById("stopBtn").addEventListener("click", () => {
+      if (!audioCtx) return;
+      stopSound();
+      statusMsg.textContent = "Stopped.";
+    });
+
+    // ==== Missions button ====
+    const missionBtn = document.getElementById("missionBtn");
+    const missionsList = document.getElementById("missions");
+
+    const extraMissions = [
+      "4. Same pitch, different timbre: Make piano and trumpet play the same pitch. Which wave looks more jagged?",
+      "5. Silent picture: Turn the volume almost to zero but keep a clear wave picture. Can sound be 'invisible' but still patterned?",
+      "6. Bass wall: Choose low pitch and max volume. Describe how the bottom canvas changes compared with high pitch, quiet volume.",
+      "7. Instrument detective: Cover the instrument name and guess which one is playing just from the wave shape.",
+      "8. Freeze frame: Pause your mental picture when the wave is tallest. Is this high or low pressure air?",
+      "9. Chill ukulele: Try to make the smoothest-looking wave you can with the ukulele. Which settings did you use?",
+      "10. Trumpet alarm: Build the 'spikiest' alarm sound using trumpet. How does that compare with guitar?"
+    ];
+
+    missionBtn.addEventListener("click", () => {
+      const listItems = missionsList.querySelectorAll("li");
+      const used = listItems.length;
+      const idx = Math.floor(Math.random() * extraMissions.length);
+      const text = extraMissions[idx];
+      const li = document.createElement("li");
+      li.textContent = (used + 1) + ". " + text.replace(/^\d+\.\s*/, "");
+      missionsList.appendChild(li);
+    });
+
+    // ==== Canvas visualisation ====
+    const oscCanvas = document.getElementById("oscilloscope");
+    const blocksCanvas = document.getElementById("blocks");
+    const oscCtx = oscCanvas.getContext("2d");
+    const blocksCtx = blocksCanvas.getContext("2d");
+
+    let lastTime = 0;
+    let phase = 0;
+
+    function resizeCanvases() {
+      const ratio = window.devicePixelRatio || 1;
+      [oscCanvas, blocksCanvas].forEach((c) => {
+        const rect = c.getBoundingClientRect();
+        c.width = rect.width * ratio;
+        c.height = rect.height * ratio;
+      });
+    }
+
+    window.addEventListener("resize", resizeCanvases);
+    resizeCanvases();
+
+    function drawOscilloscope(dt) {
+      const ctx = oscCtx;
+      const w = ctx.canvas.width;
+      const h = ctx.canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      // grid
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = "#111827";
+      ctx.lineWidth = 1;
+      const step = 16 * (window.devicePixelRatio || 1);
+      for (let x = 0; x < w; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x + 0.5, 0);
+        ctx.lineTo(x + 0.5, h);
+        ctx.stroke();
+      }
+      for (let y = 0; y < h; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(0, y + 0.5);
+        ctx.lineTo(w, y + 0.5);
+        ctx.stroke();
+      }
+
+      // wave parameters
+      const freq = pitchFrequencies[Number(pitchRange.value)];
+      const vol = Number(volumeRange.value) / 100;
+      const instr = instruments[currentInstrumentKey].oscType;
+      const baseCycles = freq / 440; // relative to A4
+      const cycles = 2 + baseCycles * 2; // how many cycles fit in view
+      const amplitude = (h * 0.28) * (0.4 + vol * 0.8);
+
+      const blockSize = 8 * (window.devicePixelRatio || 1);
+
+      for (let x = 0; x < w; x += blockSize) {
+        const t = (x / w) * cycles * Math.PI * 2 + phase;
+        let yNorm;
+
+        if (instr === "sine") {
+          yNorm = Math.sin(t);
+        } else if (instr === "triangle") {
+          yNorm = 2 * Math.asin(Math.sin(t)) / Math.PI;
+        } else if (instr === "sawtooth") {
+          yNorm = 2 * (t / (2 * Math.PI) - Math.floor(0.5 + t / (2 * Math.PI)));
+        } else {
+          // square
+          yNorm = Math.sign(Math.sin(t));
+        }
+
+        const y = h / 2 - yNorm * amplitude;
+        const colHeight = Math.abs(yNorm) * amplitude * 1.4 + blockSize;
+
+        ctx.fillStyle = yNorm > 0 ? "#22c55e" : "#38bdf8";
+        ctx.fillRect(
+          Math.round(x),
+          Math.round(y - colHeight / 2),
+          blockSize - 1,
+          Math.max(colHeight, blockSize)
+        );
+
+        // outline for pixel feel
+        ctx.strokeStyle = "#020617";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(
+          Math.round(x) + 0.5,
+          Math.round(y - colHeight / 2) + 0.5,
+          blockSize - 2,
+          Math.max(colHeight, blockSize) - 2
+        );
+      }
+
+      // centre line
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.6)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, h / 2 + 0.5);
+      ctx.lineTo(w, h / 2 + 0.5);
+      ctx.stroke();
+    }
+
+    function drawBlocks(dt) {
+      const ctx = blocksCtx;
+      const w = ctx.canvas.width;
+      const h = ctx.canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const cols = 40;
+      const rows = 10;
+      const colWidth = w / cols;
+      const rowHeight = h / rows;
+
+      const freq = pitchFrequencies[Number(pitchRange.value)];
+      const vol = Number(volumeRange.value) / 100;
+      const cycles = 2 + (freq / 440) * 3;
+
+      for (let i = 0; i < cols; i++) {
+        const xNorm = i / cols;
+        const t = xNorm * cycles * Math.PI * 2 + phase * 1.2;
+
+        const pressure = Math.sin(t) * vol;
+        const magnitude = Math.abs(pressure);
+
+        const brightness = 40 + Math.round(180 * magnitude);
+        const color =
+          pressure >= 0
+            ? `rgb(${brightness}, ${brightness}, ${brightness})`
+            : `rgb(30, 64, 175)`; // coloured rarefaction
+
+        for (let j = 0; j < rows; j++) {
+          const yNorm = j / rows;
+          // add some vertical variation like particles
+          const noise = Math.sin(t * 2 + yNorm * 8 + phase * 0.5) * 0.5;
+          const finalMag = Math.min(1, magnitude + Math.abs(noise) * 0.5);
+
+          const alpha = 0.1 + finalMag * 0.9;
+          ctx.fillStyle = pressure >= 0
+            ? `rgba(${brightness}, ${brightness}, ${brightness}, ${alpha})`
+            : `rgba(56, 189, 248, ${alpha})`;
+
+          ctx.fillRect(
+            Math.floor(i * colWidth),
+            Math.floor(j * rowHeight),
+            Math.ceil(colWidth) - 1,
+            Math.ceil(rowHeight) - 1
+          );
+
+          ctx.strokeStyle = "rgba(15, 23, 42, 0.9)";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(
+            Math.floor(i * colWidth) + 0.5,
+            Math.floor(j * rowHeight) + 0.5,
+            Math.ceil(colWidth) - 2,
+            Math.ceil(rowHeight) - 2
+          );
+        }
+      }
+    }
+
+    function loop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const dt = timestamp - lastTime;
+      lastTime = timestamp;
+
+      phase += dt * 0.005 * (1 + Number(pitchRange.value)); // faster for higher pitch
+
+      drawOscilloscope(dt);
+      drawBlocks(dt);
+
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
