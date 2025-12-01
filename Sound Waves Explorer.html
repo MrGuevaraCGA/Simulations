@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ear Structure & Hearing Range Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #020617;
+      --card: #111827;
+      --accent: #fbbf24;
+      --accent2: #38bdf8;
+      --text: #f9fafb;
+      --muted: #9ca3af;
+      --ok: #4ade80;
+      --mid: #facc15;
+      --bad: #fb7185;
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1f2937 0, #020617 60%, #000 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      padding: 16px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1100px;
+      background: linear-gradient(140deg, #020617 0%, #020111 40%, #020617 100%);
+      border-radius: 26px;
+      border: 1px solid rgba(148,163,184,0.5);
+      box-shadow: 0 26px 70px rgba(0,0,0,0.9);
+      padding: 18px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr);
+      gap: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; padding: 14px; }
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h1 span.emoji { font-size: 1.7rem; }
+
+    .subtitle {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .card {
+      background: radial-gradient(circle at top left, rgba(248,250,252,0.06), transparent 55%),
+                  linear-gradient(160deg, rgba(15,23,42,0.98), rgba(15,23,42,0.96));
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      border: 1px solid rgba(148,163,184,0.6);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.9);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      gap: 6px;
+    }
+
+    .card-title {
+      font-size: 0.96rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tag {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.8);
+      border: 1px solid rgba(148,163,184,0.7);
+      color: var(--muted);
+    }
+
+    .slider-group { margin-bottom: 8px; }
+
+    .slider-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      margin-bottom: 2px;
+      gap: 6px;
+    }
+
+    .slider-label-row span.hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      -webkit-appearance: none;
+      background: transparent;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #22c55e, #fbbf24, #fb7185);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid rgba(15,23,42,0.9);
+      margin-top: -4px;
+      box-shadow: 0 0 0 3px rgba(248,250,252,0.4);
+    }
+    input[type="range"]::-moz-range-track {
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #22c55e, #fbbf24, #fb7185);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid rgba(15,23,42,0.9);
+      box-shadow: 0 0 0 3px rgba(248,250,252,0.4);
+    }
+
+    .readouts {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      font-size: 0.75rem;
+      margin-top: 4px;
+    }
+
+    .chip {
+      background: rgba(15,23,42,0.9);
+      border-radius: 999px;
+      padding: 4px 6px;
+      border: 1px solid rgba(148,163,184,0.7);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .chip-label { color: var(--muted); font-size: 0.68rem; }
+    .chip-value { font-size: 0.78rem; }
+
+    .play-row {
+      margin-top: 6px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .play-btn {
+      border-radius: 999px;
+      border: none;
+      padding: 7px 11px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: radial-gradient(circle at top, #fbbf24 0%, #f97316 40%, #ec4899 100%);
+      color: #111827;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 14px 30px rgba(0,0,0,0.9);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease;
+    }
+    .play-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.95);
+      filter: brightness(1.04);
+    }
+    .play-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.9);
+    }
+
+    .play-note {
+      font-size: 0.72rem;
+      color: var(--muted);
+      flex: 1;
+    }
+
+    .hearing-block {
+      margin-top: 6px;
+      font-size: 0.78rem;
+    }
+
+    .hearing-bar {
+      position: relative;
+      margin-top: 4px;
+      height: 18px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #22c55e, #fbbf24, #fb7185);
+      overflow: hidden;
+      border: 1px solid rgba(148,163,184,0.9);
+    }
+
+    .hearing-mask {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(15,23,42,0) var(--hear-stop, 70%), rgba(15,23,42,0.8) calc(var(--hear-stop, 70%) + 1%), rgba(15,23,42,1) 100%);
+      pointer-events: none;
+    }
+
+    .freq-marker {
+      position: absolute;
+      top: -2px;
+      width: 2px;
+      height: 20px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      box-shadow: 0 0 8px rgba(248,250,252,0.9);
+      transform: translateX(-50%);
+      left: var(--marker-pos, 40%);
+    }
+    .freq-marker::after {
+      content: "";
+      position: absolute;
+      bottom: -2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #f9fafb;
+    }
+
+    .hearing-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      margin-top: 3px;
+    }
+    .status-ok {
+      background: rgba(34,197,94,0.2);
+      border: 1px solid rgba(34,197,94,0.8);
+      color: #bbf7d0;
+    }
+    .status-mid {
+      background: rgba(250,204,21,0.18);
+      border: 1px solid rgba(250,204,21,0.9);
+      color: #fef9c3;
+    }
+    .status-bad {
+      background: rgba(248,113,113,0.2);
+      border: 1px solid rgba(248,113,113,0.9);
+      color: #fecaca;
+    }
+
+    .definition-box {
+      margin-top: 6px;
+      font-size: 0.78rem;
+      background: radial-gradient(circle at top left, rgba(56,189,248,0.2), rgba(15,23,42,0.9));
+      border-radius: 12px;
+      padding: 6px 8px;
+      border: 1px solid rgba(56,189,248,0.7);
+    }
+
+    .definition-term {
+      font-weight: 600;
+      color: var(--accent2);
+    }
+
+    .mini-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .ear-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.4fr);
+      gap: 8px;
+    }
+
+    @media (max-width: 900px) {
+      .ear-layout { grid-template-columns: 1fr; }
+    }
+
+    .ear-diagram-wrapper {
+      background: radial-gradient(circle at top, rgba(248,250,252,0.08), transparent 55%);
+      border-radius: 16px;
+      padding: 8px;
+      border: 1px solid rgba(148,163,184,0.7);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ear-diagram-title {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .ear-svg { width: 100%; max-height: 240px; display: block; }
+
+    .ear-part-shape {
+      stroke: rgba(15,23,42,0.9);
+      stroke-width: 1.5;
+      transition: filter 0.15s ease, stroke 0.15s ease;
+      cursor: pointer;
+    }
+
+    .outer { fill: #60a5fa; }
+    .canal { fill: #38bdf8; }
+    .eardrum { fill: #facc15; }
+    .ossicles { fill: #fb923c; }
+    .cochlea { fill: #a855f7; }
+    .nerve { fill: #22c55e; }
+
+    .ear-part-shape.active {
+      filter: drop-shadow(0 0 8px rgba(248,250,252,0.9));
+      stroke: #e5e7eb;
+    }
+
+    .ear-part-shape.problem {
+      stroke: #fb7185;
+      filter: drop-shadow(0 0 10px rgba(248,113,113,0.95));
+    }
+
+    .ear-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.8rem;
+    }
+
+    .ear-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    .ear-part-btn {
+      font-size: 0.74rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.8);
+      background: rgba(15,23,42,0.95);
+      color: var(--text);
+      padding: 4px 7px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .ear-part-btn span.icon { font-size: 0.9rem; }
+
+    .ear-part-btn.active {
+      background: linear-gradient(135deg, #38bdf8, #f97316);
+      color: #020617;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.9);
+      transform: translateY(-1px);
+    }
+
+    .ear-condition-select {
+      width: 100%;
+      border-radius: 999px;
+      padding: 5px 8px;
+      font-size: 0.78rem;
+      border: 1px solid rgba(148,163,184,0.7);
+      background: rgba(15,23,42,0.98);
+      color: var(--text);
+    }
+
+    .ear-flow {
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+    .ear-flow ol {
+      padding-left: 16px;
+      margin: 3px 0 0;
+    }
+    .ear-flow li { margin-bottom: 2px; }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <!-- LEFT: hearing controls -->
+    <section class="card">
+      <h1>
+        <span class="emoji">👂</span>
+        Ear Structure & Hearing Range Lab
+      </h1>
+      <p class="subtitle">
+        Change the sound and the listener’s age, then see what reaches the brain. Great for 11-year-olds learning how ears work.
+      </p>
+
+      <div class="card-header">
+        <div class="card-title">🎚 Sound & age controls</div>
+        <span class="tag">Step 1</span>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label-row">
+          <span><strong>Age of listener</strong></span>
+          <span class="hint">Younger ears hear higher pitches better.</span>
+        </div>
+        <input id="ageSlider" type="range" min="5" max="80" value="11" />
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label-row">
+          <span><strong>Pitch (frequency)</strong></span>
+          <span class="hint" id="pitchHint">Mid pitch</span>
+        </div>
+        <input id="freqSlider" type="range" min="0" max="100" value="40" />
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label-row">
+          <span><strong>Loudness</strong></span>
+          <span class="hint" id="loudHint">Medium</span>
+        </div>
+        <input id="loudSlider" type="range" min="0" max="100" value="60" />
+      </div>
+
+      <div class="readouts">
+        <div class="chip">
+          <span class="chip-label">Exact frequency</span>
+          <span class="chip-value" id="freqReadout">4,000 Hz</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">Hearing range for this age</span>
+          <span class="chip-value" id="rangeReadout">Up to 18,000 Hz</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">Will they hear it?</span>
+          <span class="chip-value" id="hearResult">Yes, clearly</span>
+        </div>
+      </div>
+
+      <div class="play-row">
+        <button id="playBtn" class="play-btn">
+          ▶ Play this tone
+        </button>
+        <p class="play-note">
+          Ask students: “Is this sound high or low? Easy or hard to hear? How would it look as a wave?”
+        </p>
+      </div>
+
+      <div class="hearing-block">
+        <strong>Hearing bar (0 – 20,000 Hz)</strong>
+        <div class="hearing-bar">
+          <div id="hearingMask" class="hearing-mask"></div>
+          <div id="freqMarker" class="freq-marker"></div>
+        </div>
+        <div class="hearing-labels">
+          <span>0 Hz (no sound)</span>
+          <span>20,000 Hz (very high pitch)</span>
+        </div>
+        <div id="statusPill" class="status-pill status-ok" style="margin-top:4px;">
+          ✅ This sound is well inside their hearing range.
+        </div>
+      </div>
+
+      <div class="definition-box" id="defBox">
+        <span class="definition-term">Tip:</span> Slide the age to 60+ and keep the pitch very high. Notice when the sound moves into the dark “cannot hear” zone.
+      </div>
+    </section>
+
+    <!-- RIGHT: ear structure explorer -->
+    <section class="card">
+      <div class="card-header">
+        <div class="card-title">🧠 Ear structure explorer</div>
+        <span class="tag">Steps 2 & 3</span>
+      </div>
+
+      <div class="ear-layout">
+        <div class="ear-diagram-wrapper">
+          <div class="ear-diagram-title">
+            <span>Click a coloured part of the ear ➜</span>
+            <span>Sound enters from the left as waves.</span>
+          </div>
+
+          <svg class="ear-svg" viewBox="0 0 260 170">
+            <rect x="0" y="0" width="260" height="170" rx="18" ry="18" fill="rgba(15,23,42,0.95)" />
+            <!-- incoming waves -->
+            <path d="M0 80 Q10 60 20 80 Q30 100 40 80 Q50 60 60 80" stroke="#e5e7eb" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+            <path d="M0 92 Q10 72 20 92 Q30 112 40 92 Q50 72 60 92" stroke="#9ca3af" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+
+            <!-- outer ear -->
+            <path class="ear-part-shape outer" data-part="outer"
+                  d="M18 50 Q8 85 20 120 Q40 145 70 140 Q60 120 60 85 Q60 50 70 35 Q40 30 18 50Z" />
+            <!-- ear canal -->
+            <path class="ear-part-shape canal" data-part="canal"
+                  d="M70 80 Q110 70 140 80 Q110 90 70 85 Z" />
+            <!-- eardrum -->
+            <ellipse class="ear-part-shape eardrum" data-part="eardrum"
+                     cx="145" cy="82" rx="6" ry="18" />
+            <!-- ossicles -->
+            <circle class="ear-part-shape ossicles" data-part="ossicles" cx="160" cy="75" r="4" />
+            <circle class="ear-part-shape ossicles" data-part="ossicles" cx="170" cy="82" r="4" />
+            <circle class="ear-part-shape ossicles" data-part="ossicles" cx="180" cy="89" r="4" />
+            <!-- cochlea -->
+            <path class="ear-part-shape cochlea" data-part="cochlea"
+                  d="M190 80
+                     q30 0 30 20
+                     q0 20 -20 20
+                     q-20 0 -20 -20
+                     q0 -15 10 -20Z" />
+            <!-- nerve -->
+            <path class="ear-part-shape nerve" data-part="nerve"
+                  d="M210 95 Q230 90 240 80 Q248 75 252 78" />
+          </svg>
+        </div>
+
+        <div class="ear-controls">
+          <div>
+            <div class="mini-title">Step 2 • Choose an ear part</div>
+            <p style="margin:2px 0 4px; color:var(--muted); font-size:0.78rem;">
+              Click the picture or a button to see what each part does.
+            </p>
+            <div class="ear-buttons">
+              <button class="ear-part-btn" data-part="outer"><span class="icon">👂</span>Outer ear</button>
+              <button class="ear-part-btn" data-part="canal"><span class="icon">🕳️</span>Ear canal</button>
+              <button class="ear-part-btn" data-part="eardrum"><span class="icon">🥁</span>Eardrum</button>
+              <button class="ear-part-btn" data-part="ossicles"><span class="icon">🦴</span>Ossicles</button>
+              <button class="ear-part-btn" data-part="cochlea"><span class="icon">🌀</span>Cochlea</button>
+              <button class="ear-part-btn" data-part="nerve"><span class="icon">🧠</span>Hearing nerve</button>
+            </div>
+            <div class="definition-box" id="earInfoBox">
+              <span class="definition-term">Try it:</span> start with the <strong>outer ear</strong> and follow the sound all the way to the <strong>brain</strong>.
+            </div>
+          </div>
+
+          <div>
+            <div class="mini-title">Step 3 • Ear health</div>
+            <select id="earCondition" class="ear-condition-select">
+              <option value="normal">Healthy ear (everything working)</option>
+              <option value="earplug">Ear canal blocked (earplug / wax)</option>
+              <option value="infection">Middle ear infection (fluid)</option>
+              <option value="loudNoise">Inner ear damage from loud noise</option>
+            </select>
+            <div class="definition-box" id="earCondBox" style="margin-top:4px;">
+              <span class="definition-term">Healthy ear:</span> sound waves can travel easily through every part, so even quiet and high-pitch sounds are heard.
+            </div>
+          </div>
+
+          <div class="ear-flow">
+            <strong>Sound journey through the ear:</strong>
+            <ol>
+              <li>Outer ear collects the sound wave.</li>
+              <li>Wave travels down the ear canal.</li>
+              <li>Eardrum vibrates like a drum skin.</li>
+              <li>Ossicles (tiny bones) make the vibrations stronger.</li>
+              <li>Cochlea turns vibrations into electrical signals.</li>
+              <li>Auditory nerve carries them to the brain as “sound”.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ---------- Hearing model helpers ----------
+    function maxHearingForAge(age) {
+      if (age <= 10) return 20000;
+      if (age <= 20) return 19000;
+      if (age <= 30) return 17000;
+      if (age <= 40) return 15000;
+      if (age <= 50) return 13000;
+      if (age <= 60) return 11000;
+      return 9000;
+    }
+
+    function pitchComment(freq) {
+      if (freq < 250) return "Low pitch";
+      if (freq < 2000) return "Middle pitch";
+      if (freq < 8000) return "High pitch";
+      return "Very high pitch";
+    }
+
+    function loudComment(v) {
+      if (v < 0.2) return "Very quiet";
+      if (v < 0.4) return "Quiet";
+      if (v < 0.7) return "Medium";
+      if (v < 0.9) return "Loud";
+      return "Very loud";
+    }
+
+    const ageSlider = document.getElementById("ageSlider");
+    const freqSlider = document.getElementById("freqSlider");
+    const loudSlider = document.getElementById("loudSlider");
+    const freqReadout = document.getElementById("freqReadout");
+    const rangeReadout = document.getElementById("rangeReadout");
+    const hearResult = document.getElementById("hearResult");
+    const pitchHint = document.getElementById("pitchHint");
+    const loudHint = document.getElementById("loudHint");
+    const hearingMask = document.getElementById("hearingMask");
+    const freqMarker = document.getElementById("freqMarker");
+    const statusPill = document.getElementById("statusPill");
+    const defBox = document.getElementById("defBox");
+    const playBtn = document.getElementById("playBtn");
+
+    let currentFreq = 4000;
+    let currentVolume = 0.6;
+
+    function updateHearingUI() {
+      const age = parseInt(ageSlider.value, 10);
+      const maxHear = maxHearingForAge(age);
+
+      const freqT = parseFloat(freqSlider.value) / 100;
+      // Map 0..1 slider to about 50–18,000 Hz
+      currentFreq = 50 + freqT * (18000 - 50);
+
+      const volT = parseFloat(loudSlider.value) / 100;
+      currentVolume = volT;
+
+      pitchHint.textContent = pitchComment(currentFreq);
+      loudHint.textContent = loudComment(volT);
+
+      freqReadout.textContent = Math.round(currentFreq).toLocaleString() + " Hz";
+      const roundedMax = Math.round(maxHear / 100) * 100;
+      rangeReadout.textContent = "Up to " + roundedMax.toLocaleString() + " Hz";
+
+      const maxBar = 20000;
+      const hearStopPercent = Math.min(100, (maxHear / maxBar) * 100);
+      hearingMask.style.setProperty("--hear-stop", hearStopPercent + "%");
+
+      const markerPos = Math.min(100, (currentFreq / maxBar) * 100);
+      freqMarker.style.setProperty("--marker-pos", markerPos + "%");
+
+      let resultText, pillClass, expl;
+      if (currentFreq <= maxHear) {
+        resultText = "Yes, clearly";
+        pillClass = "status-pill status-ok";
+        expl = `This sound is inside their hearing range. They should hear it clearly, especially at this loudness.`;
+      } else if (currentFreq <= maxHear * 1.15) {
+        resultText = "Maybe, just at the edge";
+        pillClass = "status-pill status-mid";
+        expl = `This pitch is slightly higher than their usual limit. They might only just hear it or not notice it at all.`;
+      } else {
+        resultText = "No, too high";
+        pillClass = "status-pill status-bad";
+        expl = `The vibrations are too fast for the tiny hair cells in the cochlea at this age, so the brain gets no signal.`;
+      }
+
+      hearResult.textContent = resultText;
+      statusPill.className = pillClass;
+      statusPill.textContent = (pillClass.includes("status-ok") ? "✅ " : pillClass.includes("status-mid") ? "🟡 " : "🔇 ") + expl;
+
+      defBox.innerHTML =
+        `<span class="definition-term">Explain in your own words:</span> Why does a ${Math.round(currentFreq)} Hz sound change from “heard” to “not heard” when you slide the age from 10 to 70?`;
+    }
+
+    ageSlider.addEventListener("input", updateHearingUI);
+    freqSlider.addEventListener("input", updateHearingUI);
+    loudSlider.addEventListener("input", updateHearingUI);
+
+    // ---------- Audio ----------
+    let audioCtx = null;
+    function ensureAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === "suspended") audioCtx.resume();
+    }
+    function playTone() {
+      ensureAudioContext();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(currentFreq, audioCtx.currentTime);
+
+      const maxGain = 0.25;
+      const g = Math.max(0.001, maxGain * currentVolume);
+      gain.gain.setValueAtTime(g, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 1.1);
+    }
+    playBtn.addEventListener("click", playTone);
+
+    // ---------- Ear explorer ----------
+    const earParts = {
+      outer: {
+        name: "Outer ear (pinna)",
+        text: "The outer ear is the part you can see. It collects sound waves like a funnel and helps direct them into the ear canal."
+      },
+      canal: {
+        name: "Ear canal",
+        text: "The ear canal is a short tunnel that carries the sound wave towards the eardrum. If it is blocked by wax or an earplug, sounds become quieter and muffled."
+      },
+      eardrum: {
+        name: "Eardrum (tympanic membrane)",
+        text: "The eardrum is a thin skin that vibrates when sound waves hit it. Louder sounds make it move more. If it has fluid or damage, vibrations are weaker."
+      },
+      ossicles: {
+        name: "Ossicles (tiny bones)",
+        text: "The ossicles are three tiny bones called the hammer, anvil and stirrup. They pass vibrations from the eardrum to the inner ear and make them stronger."
+      },
+      cochlea: {
+        name: "Cochlea",
+        text: "The cochlea is a spiral-shaped, fluid-filled organ with tiny hair cells. Different parts respond to different pitches – some for low notes, some for high ones."
+      },
+      nerve: {
+        name: "Auditory (hearing) nerve",
+        text: "The auditory nerve carries electrical messages from the cochlea to the brain. The brain then recognises them as speech, music, or noise."
+      }
+    };
+
+    const earConditions = {
+      normal: {
+        name: "Healthy ear",
+        text: "All parts of the ear are working well. Sound energy moves easily from the outer ear, through the middle ear, into the cochlea and along the nerve."
+      },
+      earplug: {
+        name: "Ear canal blocked",
+        text: "An earplug or too much wax blocks some of the sound from reaching the eardrum. Quiet sounds might disappear. Once the blockage is removed, hearing usually returns to normal.",
+        problems: ["canal"]
+      },
+      infection: {
+        name: "Middle ear infection",
+        text: "Fluid behind the eardrum makes it harder for the eardrum and ossicles to move. Sounds, especially soft ones, may seem fuzzy or distant until the infection is treated.",
+        problems: ["eardrum","ossicles"]
+      },
+      loudNoise: {
+        name: "Damage from loud noise",
+        text: "Very loud sounds over time can damage hair cells in the cochlea. High pitches are often lost first. That is why protecting ears at concerts or with headphones is important.",
+        problems: ["cochlea","nerve"]
+      }
+    };
+
+    const earInfoBox = document.getElementById("earInfoBox");
+    const earCondBox = document.getElementById("earCondBox");
+    const earPartButtons = document.querySelectorAll(".ear-part-btn");
+    const earShapes = document.querySelectorAll(".ear-part-shape");
+    const earConditionSelect = document.getElementById("earCondition");
+
+    function selectEarPart(part) {
+      const data = earParts[part];
+      if (!data) return;
+
+      earPartButtons.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.part === part);
+      });
+      earShapes.forEach(shape => {
+        shape.classList.toggle("active", shape.dataset.part === part);
+      });
+
+      earInfoBox.innerHTML =
+        `<span class="definition-term">${data.name}:</span> ${data.text}`;
+    }
+
+    function applyCondition(key) {
+      const cond = earConditions[key] || earConditions.normal;
+      earCondBox.innerHTML =
+        `<span class="definition-term">${cond.name}:</span> ${cond.text}`;
+
+      earShapes.forEach(s => s.classList.remove("problem"));
+      if (cond.problems) {
+        cond.problems.forEach(p => {
+          earShapes.forEach(s => {
+            if (s.dataset.part === p) s.classList.add("problem");
+          });
+        });
+      }
+    }
+
+    earPartButtons.forEach(btn => {
+      btn.addEventListener("click", () => selectEarPart(btn.dataset.part));
+    });
+    earShapes.forEach(shape => {
+      shape.addEventListener("click", () => selectEarPart(shape.dataset.part));
+    });
+    earConditionSelect.addEventListener("change", () => applyCondition(earConditionSelect.value));
+
+    // ---------- Init ----------
+    updateHearingUI();
+    selectEarPart("outer");
+    applyCondition("normal");
+  </script>
+</body>
+</html>
